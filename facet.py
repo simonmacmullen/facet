@@ -24,8 +24,8 @@ def build(src, dest):
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"), dest)
     files = find_images(src)
     db_path = os.path.join(dest, "db.json")
-    build_db(files, db_path)
-    scale_all_images(dest, files)
+    build_db(src, files, db_path)
+    scale_all_images(src, dest, files)
 
 # shutil.copytree() requires that dest not exist. grr.
 def copytree_over(src, dest):
@@ -39,12 +39,12 @@ def copytree_over(src, dest):
         elif not os.path.exists(d) or os.path.getmtime(s) > os.path.getmtime(d):
             shutil.copy2(s, d)
 
-def build_db(files, db_path):
+def build_db(src, files, db_path):
     db = load_db(db_path)
     todo = todo_images_in_db(files, db)
     print(" Database: [{0}] images to update of [{1}] total".format(
         len(todo), len(files)))
-    update_images_in_db(todo, db_path, db)
+    update_images_in_db(src, todo, db_path, db)
     write_db(db_path, db)
     print(" Database: written\n")
 
@@ -65,18 +65,19 @@ def find_images(top):
         for f in files:
             if plausible_image(f):
                 path = os.path.join(root, f)
+                rel = os.path.relpath(path, top)
                 timestamp = os.path.getmtime(path)
-                res.append((path, timestamp))
+                res.append((rel, timestamp))
     return res
 
 def todo_images_in_db(images, db):
     return [(f, t) for (f, t) in images
             if f not in db or db[f]['timestamp'] != t]
 
-def update_images_in_db(images, db_path, db):
+def update_images_in_db(src, images, db_path, db):
     ix = 0
     for (filename, timestamp) in images:
-        db[filename] = parse_image(filename, timestamp)
+        db[filename] = parse_image(os.path.join(src, filename), timestamp)
         ix += 1
         if ix % 100 == 0: # in case of ctrl-c, checkpoint every so often
             write_db(db_path, db)
@@ -93,8 +94,7 @@ def parse_image(path, timestamp):
     taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S").timestamp()
     width = int(out[2])
     height = int(out[3])
-    return {'path':      path,
-            'keywords':  keywords,
+    return {'keywords':  keywords,
             'width':     width,
             'height':    height,
             'taken':     taken,
@@ -109,17 +109,17 @@ def good_keyword(k):
         return False
     return True
 
-def scale_all_images(dest, files):
-    scale_image_set(dest, files, "150")
-    scale_image_set(dest, files, "1000")
+def scale_all_images(src, dest, files):
+    scale_image_set(src, dest, files, "150")
+    scale_image_set(src, dest, files, "1000")
 
-def scale_image_set(dest, files, size):
+def scale_image_set(src, dest, files, size):
     scaled = os.path.join(dest, "scaled", size)
     os.makedirs(scaled, exist_ok = True)
     todo = todo_scaled_images(scaled, files)
     print(" Images {0}: [{1}] images to scale of [{2}] total".format(
         size, len(todo), len(files)))
-    scale_images(scaled, todo, size)
+    scale_images(src, scaled, todo, size)
     print(" Images {0}: scaled\n".format(size))
 
 def todo_scaled_images(scaled, images):
@@ -130,20 +130,20 @@ def todo_scaled_image(filename, timestamp, scaled):
     dest = os.path.join(scaled, filename)
     return not os.path.isfile(dest) or timestamp > os.path.getmtime(dest)
 
-def scale_images(scaled, images, size):
+def scale_images(src, scaled, images, size):
     ix = 0
     for (filename, timestamp) in images:
-        scale_image(scaled, filename, size)
+        scale_image(src, scaled, filename, size)
         ix += 1
         sys.stdout.write("\r\033[K Images {0}: image {1} ({2})".format(
             size, ix, filename))
         sys.stdout.flush()
     sys.stdout.write("\r\033[K")
 
-def scale_image(scaled, filename, size):
+def scale_image(src, scaled, filename, size):
     dest = os.path.join(scaled, filename)
     os.makedirs(os.path.dirname(dest), exist_ok = True)
-    cmd = ["convert", filename, "-auto-orient",
+    cmd = ["convert", os.path.join(src, filename), "-auto-orient",
            "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5", dest]
     subprocess.check_call(cmd)
 
