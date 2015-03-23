@@ -48,9 +48,10 @@ def find_images(top):
     res = []
     for root, dirs, files in os.walk(top):
         for f in files:
-            path = os.path.join(root, f)
-            timestamp = os.path.getmtime(path)
-            res.append((path, timestamp))
+            if plausible_image(f):
+                path = os.path.join(root, f)
+                timestamp = os.path.getmtime(path)
+                res.append((path, timestamp))
     return res
 
 def todo_images_in_db(images, db):
@@ -78,6 +79,10 @@ def parse_image(path, timestamp):
             'width':     width,
             'height':    height,
             'timestamp': timestamp}
+
+def plausible_image(f):
+    f = f.casefold()
+    return f.endswith('.jpg') or f.endswith('jpeg')
 
 def good_keyword(k):
     if k == '\\':
