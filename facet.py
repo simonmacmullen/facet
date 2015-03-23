@@ -29,7 +29,7 @@ def build_db(files, db_path):
     todo = todo_images_in_db(files, db)
     print(" Database: [{0}] images to update of [{1}] total".format(
         len(todo), len(files)))
-    update_images_in_db(todo, db)
+    update_images_in_db(todo, db_path, db)
     write_db(db_path, db)
     print(" Database: written\n")
 
@@ -58,11 +58,13 @@ def todo_images_in_db(images, db):
     return [(f, t) for (f, t) in images
             if f not in db or db[f]['timestamp'] != t]
 
-def update_images_in_db(images, db):
+def update_images_in_db(images, db_path, db):
     ix = 0
     for (filename, timestamp) in images:
         db[filename] = parse_image(filename, timestamp)
         ix += 1
+        if ix % 100 == 0: # in case of ctrl-c, checkpoint every so often
+            write_db(db_path, db)
         sys.stdout.write("\r\033[K Database: image {0} ({1})".format(
             ix, filename))
         sys.stdout.flush()
