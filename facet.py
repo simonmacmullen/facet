@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import datetime
 from optparse import OptionParser
 import subprocess
 import json
@@ -71,15 +72,18 @@ def update_images_in_db(images, db_path, db):
     sys.stdout.write("\r\033[K")
 
 def parse_image(path, timestamp):
-    cmd = ["identify", "-format", "%[IPTC:2:25]\n%[width]\n%[height]", path]
+    fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
+    cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
     keywords = [k for k in out[0].split(';') if good_keyword(k)]
-    width = int(out[1])
-    height = int(out[2])
+    taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S").timestamp()
+    width = int(out[2])
+    height = int(out[3])
     return {'path':      path,
             'keywords':  keywords,
             'width':     width,
             'height':    height,
+            'taken':     taken,
             'timestamp': timestamp}
 
 def plausible_image(f):
