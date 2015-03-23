@@ -5,6 +5,7 @@ import datetime
 from optparse import OptionParser
 import subprocess
 import json
+import shutil
 import sys
 
 def main():
@@ -20,10 +21,23 @@ def main():
 def build(src, dest):
     print("\n Facet generator\n ---------------\n")
     os.makedirs(dest, exist_ok = True)
+    copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"), dest)
     files = find_images(src)
     db_path = os.path.join(dest, "db.json")
     build_db(files, db_path)
     scale_all_images(dest, files)
+
+# shutil.copytree() requires that dest not exist. grr.
+def copytree_over(src, dest):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dest, item)
+        if os.path.isdir(s):
+            copytree_over(s, d)
+        elif not os.path.exists(d) or os.path.getmtime(s) > os.path.getmtime(d):
+            shutil.copy2(s, d)
 
 def build_db(files, db_path):
     db = load_db(db_path)
