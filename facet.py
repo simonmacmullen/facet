@@ -10,34 +10,44 @@ import sys
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
+    parser.add_option("-s", "--symlink",
+                      action="store_true", dest="symlink", default=False,
+                      help="symlink overlay files instead of copying")
     (options, args) = parser.parse_args()
     if len(args) != 2:
         parser.print_help()
         exit(1)
     src = args[0]
     dest = args[1]
-    build(src, dest)
+    build(src, dest, options)
 
-def build(src, dest):
+def build(src, dest, options):
     print("\n Facet generator\n ---------------\n")
     os.makedirs(dest, exist_ok = True)
-    copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"), dest)
+    copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
+                  dest, options.symlink)
     files = find_images(src)
     db_path = os.path.join(dest, "db.json")
     build_db(src, files, db_path)
     scale_all_images(src, dest, files)
 
 # shutil.copytree() requires that dest not exist. grr.
-def copytree_over(src, dest):
+def copytree_over(src, dest, create_symlinks=False):
+    src = os.path.abspath(src)
     if not os.path.exists(dest):
         os.makedirs(dest)
     for item in os.listdir(src):
         s = os.path.join(src, item)
         d = os.path.join(dest, item)
         if os.path.isdir(s):
-            copytree_over(s, d)
-        elif not os.path.exists(d) or os.path.getmtime(s) > os.path.getmtime(d):
-            shutil.copy2(s, d)
+            copytree_over(s, d, create_symlinks)
+        else:
+            if os.path.lexists(d):
+                os.remove(d)
+            if create_symlinks:
+                os.symlink(s, d)
+            else:
+                shutil.copy2(s, d)
 
 def build_db(src, files, db_path):
     db = load_db(db_path)
