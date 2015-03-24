@@ -103,7 +103,7 @@ def parse_image_remote(args):
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
-    keywords = [k for k in out[0].split(';') if good_keyword(k)]
+    keywords = out[0].split(';')
     try:
         taken = datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
         month = taken.strftime('%Y-%m')
@@ -123,11 +123,6 @@ def parse_image_remote(args):
 
 def id_from_filename(f):
     return f.replace('/', '-')
-
-def good_keyword(k):
-    if k == '\\':
-        return False
-    return True
 
 #-----------------------------------------------------------------------------
 # Various sub-DBs
