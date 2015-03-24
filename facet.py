@@ -106,7 +106,8 @@ def parse_image_remote(args):
     keywords = [k for k in out[0].split(';') if good_keyword(k)]
     try:
         taken = datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
-        taken = taken.timestamp()
+        month = taken.strftime('%Y-%m')
+        taken = int(taken.timestamp() * 1000) # Javascript expects millis
     except ValueError as e:
         return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
@@ -117,6 +118,7 @@ def parse_image_remote(args):
             'width':     width,
             'height':    height,
             'taken':     taken,
+            'month':     month,
             'timestamp': timestamp}
 
 def id_from_filename(f):
@@ -138,15 +140,13 @@ def build_db_variants(dest, db):
         image = db[image_id]
         for k in image['keywords']:
             db_dict_add(k, image, by_keyword)
-        ts = datetime.fromtimestamp(image['taken'])
-        month = ts.strftime('%Y-%m')
-        db_dict_add(month, image, by_month)
+        db_dict_add(image['month'], image, by_month)
     [write_db_variant(dest, "keyword-{0}.json".format(k), by_keyword[k])
      for k in by_keyword]
     [write_db_variant(dest, "month-{0}.json".format(k), by_month[k])
      for k in by_month]
     index = {'keywords': sort_keys(by_keyword),
-             'months':   sort_keys(by_month)}
+             'months':   sort_keys(by_month, reverse=True)}
     write_json(os.path.join(dest, "index.json"), index)
 
 def db_dict_add(key, val, dic):
@@ -159,9 +159,9 @@ def write_db_variant(dest, name, images):
     with open(path, 'w') as f:
         f.write(json.dumps(images))
 
-def sort_keys(dic):
+def sort_keys(dic, **kwargs):
     l = list(dic.keys())
-    l.sort()
+    l.sort(**kwargs)
     return l
 
 #-----------------------------------------------------------------------------

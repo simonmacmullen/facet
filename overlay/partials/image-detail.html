@@ -1,3 +1,22 @@
 <a href="#/images/">Back to the list!</a><br/>
-<img ng-src="scaled/1000/{{pic.file}}"/><br/>
+<table>
+  <tr>
+    <th>Keywords</th>
+    <td>
+      <span ng-repeat="keyword in image.keywords">
+        <a href="#/images/keyword-{{keyword}}">{{keyword}}</a>&nbsp;
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <th>Full size</th>
+    <td>{{image.width}}x{{image.height}}</td>
+  </tr>
+  <tr>
+    <th>Time taken</th>
+    <td><a href="#/images/month-{{image.month}}">{{image.taken | date:'medium'}}</a></td>
+  </tr>
+</table>
+
+<img ng-src="scaled/1000/{{image.file}}"/><br/>
 <a href="#/images/">Back to the list!</a>
