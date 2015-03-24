@@ -8,6 +8,7 @@ import json
 import shutil
 import sys
 import http.server
+import multiprocessing
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
@@ -91,18 +92,15 @@ def todo_images_in_db(images, db):
             or db[id_from_filename(f)]['timestamp'] != t]
 
 def update_images_in_db(src, images, db_path, db):
-    ix = 0
-    for (filename, timestamp) in images:
-        db[id_from_filename(filename)] = parse_image(src, filename, timestamp)
-        ix += 1
-        if ix % 100 == 0: # in case of ctrl-c, checkpoint every so often
+    def progress(i, data):
+        db[id_from_filename(data['file'])] = data
+        if i % 100 == 0: # in case of ctrl-c, checkpoint every so often
             write_db(db_path, db)
-        sys.stdout.write("\r\033[K Database: image {0} ({1})".format(
-            ix, filename))
-        sys.stdout.flush()
-    sys.stdout.write("\r\033[K")
+    queue = [(src, f, t) for (f, t) in images]
+    parallel_work(parse_image_remote, 'Database', queue, progress)
 
-def parse_image(src, filename, timestamp):
+def parse_image_remote(args):
+    src, filename, timestamp = args
     path = os.path.join(src, filename)
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
@@ -152,21 +150,26 @@ def todo_scaled_image(filename, timestamp, scaled):
     return not os.path.isfile(dest) or timestamp > os.path.getmtime(dest)
 
 def scale_images(src, scaled, images, size):
-    ix = 0
-    for (filename, timestamp) in images:
-        scale_image(src, scaled, filename, size)
-        ix += 1
-        sys.stdout.write("\r\033[K Images {0}: image {1} ({2})".format(
-            size, ix, filename))
-        sys.stdout.flush()
-    sys.stdout.write("\r\033[K")
+    queue = [(src, scaled, f, size) for (f, _t) in images]
+    parallel_work(scale_image_remote, 'Images {0}'.format(size), queue)
 
-def scale_image(src, scaled, filename, size):
+def scale_image_remote(args):
+    src, scaled, filename, size = args
     dest = os.path.join(scaled, filename)
     os.makedirs(os.path.dirname(dest), exist_ok = True)
     cmd = ["convert", os.path.join(src, filename), "-auto-orient",
            "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5", dest]
     subprocess.check_call(cmd)
+
+def parallel_work(work_fun, prefix, queue, progress_fun = None):
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        res = pool.imap_unordered(work_fun, queue)
+        for i, data in enumerate(res, 1):
+            if progress_fun:
+                progress_fun(i, data)
+            sys.stdout.write("\r\033[K {0}: image {1}".format(prefix, i))
+            sys.stdout.flush()
+    sys.stdout.write("\r\033[K")
 
 def maybe_launch_http(dest, port):
     if port:
