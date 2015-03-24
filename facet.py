@@ -69,7 +69,7 @@ def plausible_image(f):
 def build_db(src, files, db_path):
     db = load_db(db_path)
     todo = todo_images_in_db(files, db)
-    print(" Database: [{0}] images to update of [{1}] total".format(
+    print(" Database: {0}/{1} images to update".format(
         len(todo), len(files)))
     update_images_in_db(src, todo, db_path, db)
     write_json(db_path, db)
@@ -171,7 +171,7 @@ def scale_image_set(src, dest, files, size):
     scaled = os.path.join(dest, "scaled", size)
     os.makedirs(scaled, exist_ok = True)
     todo = todo_scaled_images(scaled, files)
-    print(" Images {0}: [{1}] images to scale of [{2}] total".format(
+    print(" Images {0}: {1}/{2} images to scale".format(
         size, len(todo), len(files)))
     scale_images(src, scaled, todo, size)
     print(" Images {0}: scaled\n".format(size))
@@ -223,12 +223,17 @@ def write_json(path, thing):
         f.write(json.dumps(thing))
 
 def parallel_work(work_fun, prefix, queue, progress_fun = None):
+    total = len(queue)
+    start = datetime.now()
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
         res = pool.imap_unordered(work_fun, queue)
         for i, data in enumerate(res, 1):
             if progress_fun:
                 progress_fun(i, data)
-            sys.stdout.write("\r\033[K {0}: image {1}".format(prefix, i))
+            elapsed = datetime.now() - start
+            eta = (total - i) / i * elapsed
+            sys.stdout.write("\r\033[K {0}: image {1}/{2} ETA {3}".format(
+                prefix, i, total, str(eta).split('.')[0]))
             sys.stdout.flush()
     sys.stdout.write("\r\033[K")
 
