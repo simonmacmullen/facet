@@ -1,1 +1,3 @@
-body {color: blue;}
+body { background: #444; color: #aaa; }
+.photo { margin: 10px; text-align: center; float: left; }
+.keyword { background: #555; margin-right: 10px;}
