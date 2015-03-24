@@ -7,12 +7,16 @@ import subprocess
 import json
 import shutil
 import sys
+import http.server
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
     parser.add_option("-s", "--symlink",
                       action="store_true", dest="symlink", default=False,
                       help="symlink overlay files instead of copying")
+    parser.add_option("-p", "--port",
+                      dest="port", default=None,
+                      help="if specified, launch an HTTP server after building")
     (options, args) = parser.parse_args()
     if len(args) != 2:
         parser.print_help()
@@ -30,6 +34,7 @@ def build(src, dest, options):
     db_path = os.path.join(dest, "db.json")
     build_db(src, files, db_path)
     scale_all_images(src, dest, files)
+    maybe_launch_http(dest, options.port)
 
 # shutil.copytree() requires that dest not exist. grr.
 def copytree_over(src, dest, create_symlinks=False):
@@ -82,12 +87,13 @@ def find_images(top):
 
 def todo_images_in_db(images, db):
     return [(f, t) for (f, t) in images
-            if f not in db or db[f]['timestamp'] != t]
+            if id_from_filename(f) not in db
+            or db[id_from_filename(f)]['timestamp'] != t]
 
 def update_images_in_db(src, images, db_path, db):
     ix = 0
     for (filename, timestamp) in images:
-        db[filename] = parse_image(os.path.join(src, filename), timestamp)
+        db[id_from_filename(filename)] = parse_image(src, filename, timestamp)
         ix += 1
         if ix % 100 == 0: # in case of ctrl-c, checkpoint every so often
             write_db(db_path, db)
@@ -96,7 +102,8 @@ def update_images_in_db(src, images, db_path, db):
         sys.stdout.flush()
     sys.stdout.write("\r\033[K")
 
-def parse_image(path, timestamp):
+def parse_image(src, filename, timestamp):
+    path = os.path.join(src, filename)
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
@@ -104,7 +111,8 @@ def parse_image(path, timestamp):
     taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S").timestamp()
     width = int(out[2])
     height = int(out[3])
-    return {'keywords':  keywords,
+    return {'file':      filename,
+            'keywords':  keywords,
             'width':     width,
             'height':    height,
             'taken':     taken,
@@ -113,6 +121,9 @@ def parse_image(path, timestamp):
 def plausible_image(f):
     f = f.casefold()
     return f.endswith('.jpg') or f.endswith('jpeg')
+
+def id_from_filename(f):
+    return f.replace('/', '-')
 
 def good_keyword(k):
     if k == '\\':
@@ -156,6 +167,17 @@ def scale_image(src, scaled, filename, size):
     cmd = ["convert", os.path.join(src, filename), "-auto-orient",
            "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5", dest]
     subprocess.check_call(cmd)
+
+def maybe_launch_http(dest, port):
+    if port:
+        os.chdir(dest)
+        httpd = http.server.HTTPServer(('', int(port)),
+                                       http.server.SimpleHTTPRequestHandler)
+        print(" Demo server running: http://localhost:{0}/".format(port))
+        httpd.serve_forever()
+
+    else:
+        print(" Not starting demo HTTP server - use '--port' if you want one.")
 
 if __name__ == "__main__":
     main()

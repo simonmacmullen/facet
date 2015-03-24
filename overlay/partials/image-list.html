@@ -1,0 +1,9 @@
+<div class="photo" ng-repeat="(k, v) in pix">
+  <a href="#/images/{{k}}">
+    <img ng-src="scaled/150/{{v.file}}"/>
+    <br/>
+    <span class="keyword" ng-repeat="keyword in v.keywords">
+      {{keyword}}
+    </span>
+  </a>
+</div>

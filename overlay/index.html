@@ -3,15 +3,11 @@
   <head>
     <title>Facet</title>
     <link rel="stylesheet" href="css/main.css" />
-    <script src="js/lib/angular-1.3.15.min.js"></script>
+    <script src="js/lib/angular.min.js"></script>
+    <script src="js/lib/angular-route.min.js"></script>
     <script src="js/main.js"></script>
   </head>
-  <body ng-controller="FacetListCtrl">
-    <div class="photo" ng-repeat="(k, v) in pix">
-      <img src="scaled/150/{{k}}"/><br/>
-      <span class="keyword" ng-repeat="keyword in v.keywords">
-        {{keyword}}
-      </span>
-    </div>
+  <body>
+    <div ng-view></div>
   </body>
 </html>
