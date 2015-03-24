@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import datetime
+from datetime import datetime
 from optparse import OptionParser
 import subprocess
 import json
@@ -9,6 +9,10 @@ import shutil
 import sys
 import http.server
 import multiprocessing
+
+#-----------------------------------------------------------------------------
+# Main
+#-----------------------------------------------------------------------------
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
@@ -28,52 +32,20 @@ def main():
 
 def build(src, dest, options):
     print("\n Facet generator\n ---------------\n")
-    os.makedirs(dest, exist_ok = True)
+    dest_json = os.path.join(dest, "json")
+    os.makedirs(dest_json, exist_ok = True)
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
                   dest, options.symlink)
     files = find_images(src)
-    db_path = os.path.join(dest, "db.json")
-    build_db(src, files, db_path)
+    db_path = os.path.join(dest_json, "db.json")
+    db = build_db(src, files, db_path)
+    build_db_variants(dest_json, db)
     scale_all_images(src, dest, files)
     maybe_launch_http(dest, options.port)
 
-# shutil.copytree() requires that dest not exist. grr.
-def copytree_over(src, dest, create_symlinks=False):
-    src = os.path.abspath(src)
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dest, item)
-        if os.path.isdir(s):
-            copytree_over(s, d, create_symlinks)
-        else:
-            if os.path.lexists(d):
-                os.remove(d)
-            if create_symlinks:
-                os.symlink(s, d)
-            else:
-                shutil.copy2(s, d)
-
-def build_db(src, files, db_path):
-    db = load_db(db_path)
-    todo = todo_images_in_db(files, db)
-    print(" Database: [{0}] images to update of [{1}] total".format(
-        len(todo), len(files)))
-    update_images_in_db(src, todo, db_path, db)
-    write_db(db_path, db)
-    print(" Database: written\n")
-
-def load_db(path):
-    try:
-        with open(path) as f:
-            return json.loads(f.read())
-    except FileNotFoundError as e:
-        return {}
-
-def write_db(path, db):
-    with open(path, 'w') as f:
-        f.write(json.dumps(db))
+#-----------------------------------------------------------------------------
+# Find images
+#-----------------------------------------------------------------------------
 
 def find_images(top):
     res = []
@@ -86,6 +58,31 @@ def find_images(top):
                 res.append((rel, timestamp))
     return res
 
+def plausible_image(f):
+    f = f.casefold()
+    return f.endswith('.jpg') or f.endswith('jpeg')
+
+#-----------------------------------------------------------------------------
+# Build master database
+#-----------------------------------------------------------------------------
+
+def build_db(src, files, db_path):
+    db = load_db(db_path)
+    todo = todo_images_in_db(files, db)
+    print(" Database: [{0}] images to update of [{1}] total".format(
+        len(todo), len(files)))
+    update_images_in_db(src, todo, db_path, db)
+    write_json(db_path, db)
+    print(" Database: written\n")
+    return db
+
+def load_db(path):
+    try:
+        with open(path) as f:
+            return json.loads(f.read())
+    except FileNotFoundError as e:
+        return {}
+
 def todo_images_in_db(images, db):
     return [(f, t) for (f, t) in images
             if id_from_filename(f) not in db
@@ -96,7 +93,7 @@ def update_images_in_db(src, images, db_path, db):
         if 'error' not in data:
             db[id_from_filename(data['file'])] = data
         if i % 100 == 0: # in case of ctrl-c, checkpoint every so often
-            write_db(db_path, db)
+            write_json(db_path, db)
     queue = [(src, f, t) for (f, t) in images]
     parallel_work(parse_image_remote, 'Database', queue, progress)
 
@@ -108,22 +105,19 @@ def parse_image_remote(args):
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
     keywords = [k for k in out[0].split(';') if good_keyword(k)]
     try:
-        taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
+        taken = datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
         taken = taken.timestamp()
     except ValueError as e:
         return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
     height = int(out[3])
-    return {'file':      filename,
+    return {'id':        id_from_filename(filename),
+            'file':      filename,
             'keywords':  keywords,
             'width':     width,
             'height':    height,
             'taken':     taken,
             'timestamp': timestamp}
-
-def plausible_image(f):
-    f = f.casefold()
-    return f.endswith('.jpg') or f.endswith('jpeg')
 
 def id_from_filename(f):
     return f.replace('/', '-')
@@ -132,6 +126,47 @@ def good_keyword(k):
     if k == '\\':
         return False
     return True
+
+#-----------------------------------------------------------------------------
+# Various sub-DBs
+#-----------------------------------------------------------------------------
+
+def build_db_variants(dest, db):
+    by_keyword = {}
+    by_month = {}
+    for image_id in db:
+        image = db[image_id]
+        for k in image['keywords']:
+            db_dict_add(k, image, by_keyword)
+        ts = datetime.fromtimestamp(image['taken'])
+        month = ts.strftime('%Y-%m')
+        db_dict_add(month, image, by_month)
+    [write_db_variant(dest, "keyword-{0}.json".format(k), by_keyword[k])
+     for k in by_keyword]
+    [write_db_variant(dest, "month-{0}.json".format(k), by_month[k])
+     for k in by_month]
+    index = {'keywords': sort_keys(by_keyword),
+             'months':   sort_keys(by_month)}
+    write_json(os.path.join(dest, "index.json"), index)
+
+def db_dict_add(key, val, dic):
+    if not key in dic:
+        dic[key] = []
+    dic[key].append(val)
+
+def write_db_variant(dest, name, images):
+    path = os.path.join(dest, name)
+    with open(path, 'w') as f:
+        f.write(json.dumps(images))
+
+def sort_keys(dic):
+    l = list(dic.keys())
+    l.sort()
+    return l
+
+#-----------------------------------------------------------------------------
+# Scale images
+#-----------------------------------------------------------------------------
 
 def scale_all_images(src, dest, files):
     scale_image_set(src, dest, files, "150")
@@ -166,6 +201,32 @@ def scale_image_remote(args):
            "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5", dest]
     subprocess.check_call(cmd)
 
+#-----------------------------------------------------------------------------
+# Utils
+#-----------------------------------------------------------------------------
+
+# shutil.copytree() requires that dest not exist. grr.
+def copytree_over(src, dest, create_symlinks=False):
+    src = os.path.abspath(src)
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dest, item)
+        if os.path.isdir(s):
+            copytree_over(s, d, create_symlinks)
+        else:
+            if os.path.lexists(d):
+                os.remove(d)
+            if create_symlinks:
+                os.symlink(s, d)
+            else:
+                shutil.copy2(s, d)
+
+def write_json(path, thing):
+    with open(path, 'w') as f:
+        f.write(json.dumps(thing))
+
 def parallel_work(work_fun, prefix, queue, progress_fun = None):
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
         res = pool.imap_unordered(work_fun, queue)
@@ -186,6 +247,8 @@ def maybe_launch_http(dest, port):
 
     else:
         print(" Not starting demo HTTP server - use '--port' if you want one.")
+
+#-----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

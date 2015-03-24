@@ -17,13 +17,13 @@ facetApp.config(['$routeProvider',
   }]);
 
 facetApp.controller('ImageListCtrl', function ($scope, $http) {
-    $http.get('db.json').success(function(data) {
+    $http.get('json/db.json').success(function(data) {
         $scope.pix = data;
     });
 });
 
 facetApp.controller('ImageDetailCtrl', function ($scope, $http, $routeParams) {
-    $http.get('db.json').success(function(data) {
+    $http.get('json/db.json').success(function(data) {
         $scope.pic = data[$routeParams.imageId];
     });
 });
