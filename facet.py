@@ -93,7 +93,8 @@ def todo_images_in_db(images, db):
 
 def update_images_in_db(src, images, db_path, db):
     def progress(i, data):
-        db[id_from_filename(data['file'])] = data
+        if 'error' not in data:
+            db[id_from_filename(data['file'])] = data
         if i % 100 == 0: # in case of ctrl-c, checkpoint every so often
             write_db(db_path, db)
     queue = [(src, f, t) for (f, t) in images]
@@ -106,7 +107,11 @@ def parse_image_remote(args):
     cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
     keywords = [k for k in out[0].split(';') if good_keyword(k)]
-    taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S").timestamp()
+    try:
+        taken = datetime.datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
+        taken = taken.timestamp()
+    except ValueError as e:
+        return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
     height = int(out[3])
     return {'file':      filename,
