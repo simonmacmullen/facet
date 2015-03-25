@@ -169,6 +169,7 @@ def db_dict_add(key, val, dic):
     dic[key].append(val)
 
 def write_db_variant(dest, name, images):
+    sort_images(images)
     path = os.path.join(dest, name)
     with open(path, 'w') as f:
         f.write(json.dumps(images))
@@ -177,6 +178,9 @@ def sort_keys(dic, **kwargs):
     l = list(dic.keys())
     l.sort(**kwargs)
     return l
+
+def sort_images(images):
+    images.sort(key=lambda k: k['taken'])
 
 #-----------------------------------------------------------------------------
 # Utils
