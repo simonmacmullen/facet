@@ -10,6 +10,8 @@ import sys
 import http.server
 import multiprocessing
 
+SCALED_SIZES = ["150", "1000"]
+
 #-----------------------------------------------------------------------------
 # Main
 #-----------------------------------------------------------------------------
@@ -38,9 +40,8 @@ def build(src, dest, options):
                   dest, options.symlink)
     files = find_images(src)
     db_path = os.path.join(dest_json, "db.json")
-    db = build_db(src, files, db_path)
+    db = build_db(src, dest, files, db_path)
     build_db_variants(dest_json, db)
-    scale_all_images(src, dest, files)
     maybe_launch_http(dest, options.port)
 
 #-----------------------------------------------------------------------------
@@ -66,14 +67,13 @@ def plausible_image(f):
 # Build master database
 #-----------------------------------------------------------------------------
 
-def build_db(src, files, db_path):
+def build_db(src, dest, files, db_path):
     db = load_db(db_path)
-    todo = todo_images_in_db(files, db)
-    print(" Database: {0}/{1} images to update".format(
-        len(todo), len(files)))
-    update_images_in_db(src, todo, db_path, db)
+    todo = todo_images(files, dest, db)
+    print(" Images to update: {0} | Total: {1}".format(len(todo), len(files)))
+    update_images_in_db(src, dest, todo, db_path, db)
     write_json(db_path, db)
-    print(" Database: written\n")
+    print(" Complete\n")
     return db
 
 def load_db(path):
@@ -83,22 +83,29 @@ def load_db(path):
     except FileNotFoundError as e:
         return {}
 
-def todo_images_in_db(images, db):
-    return [(f, t) for (f, t) in images
-            if id_from_filename(f) not in db
-            or db[id_from_filename(f)]['timestamp'] != t]
+def todo_images(images, dest, db):
+    return [(f, t) for (f, t) in images if todo_image(f, t, dest, db)]
 
-def update_images_in_db(src, images, db_path, db):
+def todo_image(f, t, dest, db):
+    return id_from_filename(f) not in db \
+        or db[id_from_filename(f)]['timestamp'] != t \
+        or any([todo_scaled_image(f, t, dest, size) for size in SCALED_SIZES])
+
+def todo_scaled_image(filename, timestamp, dest, size):
+    scaled = scaled_filename(dest, size, filename)
+    return not os.path.isfile(scaled) or timestamp > os.path.getmtime(scaled)
+
+def update_images_in_db(src, dest, images, db_path, db):
     def progress(i, data):
         if 'error' not in data:
             db[id_from_filename(data['file'])] = data
-        if i % 100 == 0: # in case of ctrl-c, checkpoint every so often
+        if i % 10 == 0: # in case of ctrl-c, checkpoint every so often
             write_json(db_path, db)
-    queue = [(src, f, t) for (f, t) in images]
-    parallel_work(parse_image_remote, 'Database', queue, progress)
+    queue = [(src, dest, f, t) for (f, t) in images]
+    parallel_work(parse_scale_image_remote, queue, progress)
 
-def parse_image_remote(args):
-    src, filename, timestamp = args
+def parse_scale_image_remote(args):
+    src, dest, filename, timestamp = args
     path = os.path.join(src, filename)
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
@@ -112,6 +119,7 @@ def parse_image_remote(args):
         return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
     height = int(out[3])
+    [scale_image(src, dest, filename, size) for size in SCALED_SIZES]
     return {'id':        id_from_filename(filename),
             'file':      filename,
             'keywords':  keywords,
@@ -121,8 +129,19 @@ def parse_image_remote(args):
             'month':     month,
             'timestamp': timestamp}
 
+def scale_image(src, dest, filename, size):
+    scaled = scaled_filename(dest, size, filename)
+    os.makedirs(os.path.dirname(scaled), exist_ok = True)
+    cmd = ["convert", os.path.join(src, filename), "-auto-orient",
+           "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5",
+           scaled]
+    subprocess.check_call(cmd)
+
 def id_from_filename(f):
     return f.replace('/', '-')
+
+def scaled_filename(dest, size, filename):
+    return os.path.join(dest, "scaled", size, filename)
 
 #-----------------------------------------------------------------------------
 # Various sub-DBs
@@ -160,43 +179,6 @@ def sort_keys(dic, **kwargs):
     return l
 
 #-----------------------------------------------------------------------------
-# Scale images
-#-----------------------------------------------------------------------------
-
-def scale_all_images(src, dest, files):
-    scale_image_set(src, dest, files, "150")
-    scale_image_set(src, dest, files, "1000")
-
-def scale_image_set(src, dest, files, size):
-    scaled = os.path.join(dest, "scaled", size)
-    os.makedirs(scaled, exist_ok = True)
-    todo = todo_scaled_images(scaled, files)
-    print(" Images {0}: {1}/{2} images to scale".format(
-        size, len(todo), len(files)))
-    scale_images(src, scaled, todo, size)
-    print(" Images {0}: scaled\n".format(size))
-
-def todo_scaled_images(scaled, images):
-    return [(f, t) for (f, t) in images
-            if todo_scaled_image(f, t, scaled)]
-
-def todo_scaled_image(filename, timestamp, scaled):
-    dest = os.path.join(scaled, filename)
-    return not os.path.isfile(dest) or timestamp > os.path.getmtime(dest)
-
-def scale_images(src, scaled, images, size):
-    queue = [(src, scaled, f, size) for (f, _t) in images]
-    parallel_work(scale_image_remote, 'Images {0}'.format(size), queue)
-
-def scale_image_remote(args):
-    src, scaled, filename, size = args
-    dest = os.path.join(scaled, filename)
-    os.makedirs(os.path.dirname(dest), exist_ok = True)
-    cmd = ["convert", os.path.join(src, filename), "-auto-orient",
-           "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5", dest]
-    subprocess.check_call(cmd)
-
-#-----------------------------------------------------------------------------
 # Utils
 #-----------------------------------------------------------------------------
 
@@ -222,7 +204,7 @@ def write_json(path, thing):
     with open(path, 'w') as f:
         f.write(json.dumps(thing))
 
-def parallel_work(work_fun, prefix, queue, progress_fun = None):
+def parallel_work(work_fun, queue, progress_fun = None):
     total = len(queue)
     start = datetime.now()
     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
@@ -232,8 +214,8 @@ def parallel_work(work_fun, prefix, queue, progress_fun = None):
                 progress_fun(i, data)
             elapsed = datetime.now() - start
             eta = (total - i) / i * elapsed
-            sys.stdout.write("\r\033[K {0}: image {1}/{2} ETA {3}".format(
-                prefix, i, total, str(eta).split('.')[0]))
+            sys.stdout.write("\r\033[K Images updated: {0} | ETA: {1}".format(
+                i, str(eta).split('.')[0]))
             sys.stdout.flush()
     sys.stdout.write("\r\033[K")
 
