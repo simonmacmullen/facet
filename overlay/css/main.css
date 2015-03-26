@@ -14,4 +14,7 @@ table.metadata th { color: #ddd; font-weight: normal; text-align: right; }
 
 img.main-image { margin-bottom: 10px; }
 
-.photo { margin: 0 10px 10px 0; text-align: center; height: 150px; float: left; }
+div.photo-group { overflow: auto; }
+div.photo-group h2 { font-size: 0.9em; font-weight: normal; margin: 0 0 5px 0; border-bottom: 1px solid #666; color: #666; }
+
+div.photo { margin: 0 10px 10px 0; text-align: center; height: 150px; float: left; }

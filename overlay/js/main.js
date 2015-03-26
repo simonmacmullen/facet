@@ -42,7 +42,7 @@ facetApp.controller('ListCtrl', function ($scope, JsonHttp, $routeParams) {
     var path = $routeParams.mode + '/' + $routeParams.indexId;
     JsonHttp.get(path, function(data) {
         $scope.meta = data.meta;
-        $scope.images = data.images;
+        $scope.groups = group_by_day(data.images);
         $scope.mode = $routeParams.mode;
     });
 });
@@ -89,3 +89,23 @@ facetApp.service('JsonHttp', function($http) {
             });
     }
 });
+
+function group_by_day(ungrouped) {
+    var result = [];
+    var date = null;
+    var current;
+    for (var i = 0; i < ungrouped.length; i++) {
+        var d = new Date(ungrouped[i].taken);
+        //var d2 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        var d2 = new Date(d.getFullYear(), d.getMonth(), 1);
+        //var d2 = new Date(d.getFullYear(), 0, 1);
+        if (date == null || date.getTime() != d2.getTime()) {
+            date = d2;
+            current = {last_date:d, first_date:null, images:[]};
+            result.push(current);
+        }
+        current.images.push(ungrouped[i]);
+        current.first_date = d;
+    }
+    return result;
+}

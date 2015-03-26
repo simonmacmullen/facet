@@ -5,9 +5,12 @@
 </toppanel>
 
 <div>
-  <div class="photo" ng-repeat="image in images">
-    <a href="#/image/{{image.id}}">
-      <img ng-src="scaled/150/{{image.file}}"/>
-    </a>
+  <div class="photo-group" ng-repeat="group in groups">
+    <h2>{{group.first_date | date}} - {{group.last_date | date}}</h2>
+    <div class="photo" ng-repeat="image in group.images">
+      <a href="#/image/{{image.id}}">
+        <img ng-src="scaled/150/{{image.file}}"/>
+      </a>
+    </div>
   </div>
 </div>
