@@ -53,11 +53,16 @@ facetApp.controller('DetailCtrl', function ($scope, JsonHttp, $routeParams) {
     });
 });
 
-facetApp.directive('toppanel', function(){
+facetApp.directive('toppanel', function($rootScope) {
     return {
         restrict: 'E',
         transclude: true,
         scope: { title:'@' },
+        link: function(scope, element, attrs) {
+            attrs.$observe('title', function(value) {
+                $rootScope.title = value + " - Facet image viewer";
+            });
+        },
         template: '<header>' +
             '<h1><b>{{title}}</b> - Facet image viewer</h1>' +
             '<nav>' +
