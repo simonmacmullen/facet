@@ -133,7 +133,10 @@ def parse_scale_image_remote(args):
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
-    keywords = out[0].split(';')
+    if out[0] == '':
+        keywords = []
+    else:
+        keywords = out[0].split(';')
     try:
         taken = datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
         month = taken.strftime('%Y-%m')
