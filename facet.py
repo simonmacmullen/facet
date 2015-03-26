@@ -71,6 +71,8 @@ def build_db(src, dest, files, db_path):
     todo = todo_images(files, dest, db)
     print(" Images to update: {0} | Total: {1}".format(len(todo), len(files)))
     update_images_in_db(src, dest, todo, db_path, db)
+    clean_scaled(files, dest)
+    db = clean_db(files, db)
     write_json(db_path, db)
     print(" Complete\n")
     return db
@@ -93,6 +95,28 @@ def todo_image(f, t, dest, db):
 def todo_scaled_image(filename, timestamp, dest, size):
     scaled = scaled_filename(dest, size, filename)
     return not os.path.isfile(scaled) or timestamp > os.path.getmtime(scaled)
+
+def clean_db(files, db):
+    id_set = set([id_from_filename(f) for (f, _t) in files])
+    i = 0
+    keys = list(db.keys())
+    for k in keys:
+        if not k in id_set:
+            del db[k]
+            i += 1
+    print(" Removed {0} old images".format(i))
+    return db
+
+def clean_scaled(files, dest):
+    filename_set = set([f for (f, _t) in files])
+    for size in SCALED_SIZES:
+        top = os.path.join(dest, "scaled", size)
+        for root, dirs, files in os.walk(top):
+            for f in files:
+                fullpath = os.path.join(root, f)
+                relpath = os.path.relpath(fullpath, top)
+                if relpath not in filename_set:
+                    os.remove(fullpath)
 
 def update_images_in_db(src, dest, images, db_path, db):
     def progress(i, data):
