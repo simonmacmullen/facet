@@ -67,7 +67,17 @@ facetApp.directive('toppanel', function(){
             '</nav>' +
             '</header>'
     };
-})
+});
+
+facetApp.directive('logFontSize', function() {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            var s = Math.max(Math.log10(attrs.logFontSize), 0.8);
+            element.attr("style", "font-size: " + s + "em;");
+        }
+    };
+});
 
 facetApp.service('JsonHttp', function($http) {
     this.get = function(path, onsuccess) {
