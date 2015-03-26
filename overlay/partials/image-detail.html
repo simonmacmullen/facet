@@ -1,10 +1,13 @@
-<a href="#/images/">Back to the list!</a><br/>
+<a href="#/images/">Back to the top!</a><br/>
+<a href="#/image/{{image.prev}}">Prev</a>
+<a href="#/image/{{image.next}}">Next</a>
+<br/>
 <table>
   <tr>
     <th>Keywords</th>
     <td>
       <span ng-repeat="keyword in image.keywords">
-        <a href="#/images/keyword-{{keyword}}">{{keyword}}</a>&nbsp;
+        <a href="#/images/keyword/{{keyword}}">{{keyword}}</a>&nbsp;
       </span>
     </td>
   </tr>
@@ -14,9 +17,11 @@
   </tr>
   <tr>
     <th>Time taken</th>
-    <td><a href="#/images/month-{{image.month}}">{{image.taken | date:'medium'}}</a></td>
+    <td>
+      {{image.taken | date:'medium'}}
+      <a href="#/images/month/{{image.month}}">(More from {{image.month}})</a>
+    </td>
   </tr>
 </table>
 
 <img ng-src="scaled/1000/{{image.file}}"/><br/>
-<a href="#/images/">Back to the list!</a>

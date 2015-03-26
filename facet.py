@@ -35,7 +35,6 @@ def main():
 def build(src, dest, options):
     print("\n Facet generator\n ---------------\n")
     dest_json = os.path.join(dest, "json")
-    os.makedirs(dest_json, exist_ok = True)
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
                   dest, options.symlink)
     files = find_images(src)
@@ -131,7 +130,7 @@ def parse_scale_image_remote(args):
 
 def scale_image(src, dest, filename, size):
     scaled = scaled_filename(dest, size, filename)
-    os.makedirs(os.path.dirname(scaled), exist_ok = True)
+    ensure_dir(scaled)
     cmd = ["convert", os.path.join(src, filename), "-auto-orient",
            "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5",
            scaled]
@@ -148,39 +147,60 @@ def scaled_filename(dest, size, filename):
 #-----------------------------------------------------------------------------
 
 def build_db_variants(dest, db):
-    by_keyword = {}
-    by_month = {}
+    images_by_keyword = {}
+    images_by_month = {}
+    all_images = []
     for image_id in db:
         image = db[image_id]
         for k in image['keywords']:
-            db_dict_add(k, image, by_keyword)
-        db_dict_add(image['month'], image, by_month)
-    [write_db_variant(dest, "keyword-{0}.json".format(k), by_keyword[k])
-     for k in by_keyword]
-    [write_db_variant(dest, "month-{0}.json".format(k), by_month[k])
-     for k in by_month]
-    index = {'keywords': sort_keys(by_keyword),
-             'months':   sort_keys(by_month, reverse=True)}
+            db_dict_add(k, image, images_by_keyword)
+        db_dict_add(image['month'], image, images_by_month)
+        all_images.append(image)
+    sort_images(all_images)
+    add_prev_next(all_images)
+    keywords, keywords_by_id = dict_index(images_by_keyword)
+    months, months_by_id = dict_index(images_by_month, reverse=True)
+    write_db_variants(dest, "keyword", images_by_keyword, keywords_by_id)
+    write_db_variants(dest, "month", images_by_month, months_by_id)
+    index = {'keywords': keywords,
+             'months':   months}
     write_json(os.path.join(dest, "index.json"), index)
+    [write_json(os.path.join(dest, "id", "{0}.json".format(image['id'])), image)
+     for image in all_images]
 
 def db_dict_add(key, val, dic):
     if not key in dic:
         dic[key] = []
     dic[key].append(val)
 
-def write_db_variant(dest, name, images):
-    sort_images(images)
-    path = os.path.join(dest, name)
-    with open(path, 'w') as f:
-        f.write(json.dumps(images))
+def write_db_variants(dest, key_type, images_by_key, keys_by_id):
+    for key in images_by_key:
+        images = images_by_key[key]
+        sort_images(images)
+        write_json(os.path.join(dest, key_type, "{0}.json".format(key)),
+                   {'images': images,
+                    'meta':   keys_by_id[key]})
 
-def sort_keys(dic, **kwargs):
-    l = list(dic.keys())
-    l.sort(**kwargs)
-    return l
+def dict_index(dic, **kwargs):
+    item_list = []
+    for key in dic.keys():
+        item_list.append({'id': key, 'count': len(dic[key])})
+    item_list.sort(key=lambda item: item['id'], **kwargs)
+    add_prev_next(item_list)
+    item_dict = {}
+    for item in item_list:
+        item_dict[item['id']] = item
+    return (item_list, item_dict)
+
+def add_prev_next(items):
+    for i in range(0, len(items)):
+        if i != 0:
+            items[i]['prev'] = items[i - 1]['id']
+        if i != len(items) - 1:
+            items[i]['next'] = items[i + 1]['id']
 
 def sort_images(images):
-    images.sort(key=lambda k: k['taken'])
+    images.sort(key=lambda item: item['taken'])
 
 #-----------------------------------------------------------------------------
 # Utils
@@ -205,8 +225,12 @@ def copytree_over(src, dest, create_symlinks=False):
                 shutil.copy2(s, d)
 
 def write_json(path, thing):
+    ensure_dir(path)
     with open(path, 'w') as f:
         f.write(json.dumps(thing))
+
+def ensure_dir(f):
+    os.makedirs(os.path.dirname(f), exist_ok = True)
 
 def parallel_work(work_fun, queue, progress_fun = None):
     total = len(queue)
