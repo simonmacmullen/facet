@@ -3,34 +3,27 @@ var facetApp = angular.module('facetApp', ['ngRoute']);
 facetApp.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-      when('/meta', {
-        templateUrl: 'partials/image-meta.html',
+      when('/keywords', {
+        templateUrl: 'partials/keywords.html',
+        controller: 'MetaCtrl'
+      }).
+      when('/months', {
+        templateUrl: 'partials/months.html',
         controller: 'MetaCtrl'
       }).
       when('/images/:mode/:indexId', {
-        templateUrl: 'partials/image-list.html',
+        templateUrl: 'partials/list.html',
         controller: 'ListCtrl'
       }).
       when('/image/:imageId', {
-        templateUrl: 'partials/image-detail.html',
+        templateUrl: 'partials/detail.html',
         controller: 'DetailCtrl'
       }).
       otherwise({
-        templateUrl: 'partials/image-meta.html',
+        templateUrl: 'partials/months.html',
         controller: 'IndexCtrl'
       });
   }]);
-
-facetApp.service('JsonHttp', function($http) {
-    this.get = function(path, onsuccess) {
-        return $http.get('json/' + path + '.json')
-            .success(onsuccess)
-            .error(function (data, status, headers, config) {
-                // TODO
-                //alert("Error " + status);
-            });
-    }
-});
 
 facetApp.controller('IndexCtrl', function ($scope, JsonHttp, $window) {
     JsonHttp.get('index', function(data) {
@@ -58,4 +51,31 @@ facetApp.controller('DetailCtrl', function ($scope, JsonHttp, $routeParams) {
     JsonHttp.get('id/' + $routeParams.imageId, function(data) {
         $scope.image = data;
     });
+});
+
+facetApp.directive('toppanel', function(){
+    return {
+        restrict: 'E',
+        transclude: true,
+        scope: { title:'@' },
+        template: '<header>' +
+            '<h1><b>{{title}}</b> - Facet image viewer</h1>' +
+            '<nav>' +
+            '<a href="#/keywords">All keywords</a>' +
+            '<a href="#/months">All months</a>' +
+            '<ng-transclude></ng-transclude>' +
+            '</nav>' +
+            '</header>'
+    };
+})
+
+facetApp.service('JsonHttp', function($http) {
+    this.get = function(path, onsuccess) {
+        return $http.get('json/' + path + '.json')
+            .success(onsuccess)
+            .error(function (data, status, headers, config) {
+                // TODO
+                //alert("Error " + status);
+            });
+    }
 });

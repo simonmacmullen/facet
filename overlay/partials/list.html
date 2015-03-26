@@ -1,0 +1,13 @@
+<toppanel title="{{mode}}: {{meta.id}}">
+    <a href="#/images/{{mode}}/{{meta.prev}}">&lt; {{meta.prev}}</a>
+    <span>{{meta.id}}</span>
+    <a href="#/images/{{mode}}/{{meta.next}}">{{meta.next}} &gt;</a>
+</toppanel>
+
+<div>
+  <div class="photo" ng-repeat="image in images">
+    <a href="#/image/{{image.id}}">
+      <img ng-src="scaled/150/{{image.file}}"/>
+    </a>
+  </div>
+</div>

@@ -200,7 +200,7 @@ def add_prev_next(items):
             items[i]['next'] = items[i + 1]['id']
 
 def sort_images(images):
-    images.sort(key=lambda item: item['taken'])
+    images.sort(key=lambda item: item['taken'], reverse = True)
 
 #-----------------------------------------------------------------------------
 # Utils
