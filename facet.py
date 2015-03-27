@@ -9,6 +9,7 @@ import shutil
 import sys
 import http.server
 import multiprocessing
+import random
 
 SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
@@ -242,7 +243,12 @@ def write_indexes(dest, key_type, images_by_key, keys_by_id):
 def dict_index(dic, **kwargs):
     item_list = []
     for key in dic.keys():
-        item_list.append({'id': key, 'count': len(dic[key])})
+        thumbs = [i['file'] for i in dic[key]]
+        random.shuffle(thumbs)
+        thumbs = thumbs[0:3]
+        item_list.append({'id':     key,
+                          'count':  len(dic[key]),
+                          'thumbs': thumbs})
     item_list.sort(key=lambda item: item['id'], **kwargs)
     add_prev_next(item_list)
     item_dict = {}

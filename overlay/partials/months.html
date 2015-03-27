@@ -1,7 +1,17 @@
 <toppanel title="Months"></toppanel>
 
-<div>
-  <span ng-repeat="month in months">
-    <a href="#/images/month/{{month.id}}">{{month.id | month}}</a> ({{month.count}})&nbsp;
-  </span>
-</div>
+<table>
+  <tr ng-repeat="month in months">
+    <td>
+      <div class="mini-photo" ng-repeat="thumb in month.thumbs"
+           style="background-image: url(scaled/120/{{thumb}});">
+      </div>
+    </td>
+    <td>
+      <a href="#/images/month/{{month.id}}">
+        {{month.id | month}}<br/>
+        {{month.count}} images
+      </a>
+    </td>
+  </tr>
+</table>
