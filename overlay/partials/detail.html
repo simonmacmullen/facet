@@ -2,6 +2,11 @@
     <a href="#/image/{{image.prev}}">&lt; Newer image</a>
     <span>This image</span>
     <a href="#/image/{{image.next}}">Older image &gt;</a>
+    <span>Similar:</span>
+    <span ng-repeat="keyword in image.keywords">
+      <a href="#/images/keyword/{{keyword}}">{{keyword}}</a>
+    </span>
+    <a href="#/images/month/{{image.month}}">{{image.month | month}}</a>
 </toppanel>
 
 <img class="main-image" ng-src="scaled/1000/{{image.file}}"/>
@@ -21,9 +26,6 @@
   </tr>
   <tr>
     <th>Time taken</th>
-    <td>
-      {{image.taken | date:'medium'}}
-      <a href="#/images/month/{{image.month}}">(More from {{image.month}})</a>
-    </td>
+    <td>{{image.taken | date:'medium'}}</td>
   </tr>
 </table>

@@ -2,6 +2,6 @@
 
 <div>
   <span ng-repeat="month in months">
-    <a href="#/images/month/{{month.id}}">{{month.id}}</a> ({{month.count}})&nbsp;
+    <a href="#/images/month/{{month.id}}">{{month.id | month}}</a> ({{month.count}})&nbsp;
   </span>
 </div>

@@ -12,7 +12,7 @@ header a, table.metadata a { background: #222; padding: 2px; border-radius: 3px;
 table.metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
 table.metadata th { color: #ddd; font-weight: normal; text-align: right; }
 
-img.main-image { margin-bottom: 10px; }
+img.main-image { margin-bottom: 10px; border: 2px solid black; }
 
 div.photo-box { padding-bottom: 100px; }
 

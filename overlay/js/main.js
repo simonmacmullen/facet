@@ -114,6 +114,19 @@ facetApp.directive('groupHeading', function() {
     };
 });
 
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'];
+
+facetApp.filter('month', function() {
+    return function(input) {
+        input = input || '';
+        var yearMonth = input.split('-');
+        if (yearMonth.length != 2) return input;
+        var month = MONTHS[parseInt(yearMonth[1]) - 1];
+        return month + ' ' + yearMonth[0];
+    };
+})
+
 facetApp.service('JsonHttp', function($http) {
     this.get = function(path, onsuccess) {
         return $http.get('json/' + path + '.json')

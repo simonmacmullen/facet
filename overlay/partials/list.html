@@ -1,4 +1,11 @@
-<toppanel title="{{meta.id}} ({{mode}})">
+<toppanel ng-if="mode == 'month'" title="{{meta.id | month}}">
+    <a href="#/images/{{mode}}/{{meta.prev}}">&lt; {{meta.prev | month}}</a>
+    <span>{{meta.id | month}}</span>
+    <a href="#/images/{{mode}}/{{meta.next}}">{{meta.next | month}} &gt;</a>
+    <a href="" ng-click="change_group_mode()">Group size: {{group_mode}}</a>
+</toppanel>
+
+<toppanel ng-if="mode == 'keyword'" title="{{meta.id}}">
     <a href="#/images/{{mode}}/{{meta.prev}}">&lt; {{meta.prev}}</a>
     <span>{{meta.id}}</span>
     <a href="#/images/{{mode}}/{{meta.next}}">{{meta.next}} &gt;</a>
