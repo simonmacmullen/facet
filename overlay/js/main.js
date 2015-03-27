@@ -40,11 +40,28 @@ facetApp.controller('MetaCtrl', function ($scope, JsonHttp) {
 
 facetApp.controller('ListCtrl', function ($scope, JsonHttp, $routeParams) {
     var path = $routeParams.mode + '/' + $routeParams.indexId;
+    var do_groups = function () {
+        $scope.groups = group_by_day($scope.groups_raw, $scope.group_mode);
+    }
     JsonHttp.get(path, function(data) {
         $scope.meta = data.meta;
-        $scope.groups = group_by_day(data.images);
+        $scope.groups_raw = data.images;
         $scope.mode = $routeParams.mode;
+        do_groups();
     });
+
+    $scope.group_mode = 'forever';
+    $scope.change_group_mode = function() {
+        var gm = $scope.group_mode;
+        switch (gm) {
+            case 'forever': gm = 'year';    break;
+            case 'year':    gm = 'month';   break;
+            case 'month':   gm = 'day';     break;
+            case 'day':     gm = 'forever'; break;
+        }
+        $scope.group_mode = gm;
+        do_groups();
+    };
 });
 
 facetApp.controller('DetailCtrl', function ($scope, JsonHttp, $routeParams) {
@@ -56,6 +73,7 @@ facetApp.controller('DetailCtrl', function ($scope, JsonHttp, $routeParams) {
 facetApp.directive('toppanel', function($rootScope) {
     return {
         restrict: 'E',
+        replace: true,
         transclude: true,
         scope: { title:'@' },
         link: function(scope, element, attrs) {
@@ -84,6 +102,18 @@ facetApp.directive('logFontSize', function() {
     };
 });
 
+facetApp.directive('groupHeading', function() {
+    return {
+        restrict: 'E',
+        replace: true,
+        scope: { group: '=' },
+        template: '<h2 ng-switch on="group.first_date.getTime() == group.last_date.getTime()">' +
+            '<span ng-switch-when="true">{{group.last_date | date}}</span>' +
+            '<span ng-switch-default>{{group.first_date | date}} - {{group.last_date | date}}</span>' +
+            '</h2>'
+    };
+});
+
 facetApp.service('JsonHttp', function($http) {
     this.get = function(path, onsuccess) {
         return $http.get('json/' + path + '.json')
@@ -95,16 +125,18 @@ facetApp.service('JsonHttp', function($http) {
     }
 });
 
-function group_by_day(ungrouped) {
+function group_by_day(ungrouped, group_mode) {
     var result = [];
     var date = null;
     var current;
     for (var i = 0; i < ungrouped.length; i++) {
         var d = new Date(ungrouped[i].taken);
-        //var d2 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        var d2 = new Date(d.getFullYear(), d.getMonth(), 1);
-        //var d2 = new Date(d.getFullYear(), 0, 1);
-        if (date == null || date.getTime() != d2.getTime()) {
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        var d2 = new Date(d.getFullYear(),
+                          (group_mode == 'year') ? 0 : d.getMonth(),
+                          (group_mode == 'day')  ? d.getDay() : 1);
+        if (date == null ||
+            (group_mode != 'forever' && date.getTime() != d2.getTime())) {
             date = d2;
             current = {last_date:d, first_date:null, images:[]};
             result.push(current);

@@ -2,11 +2,12 @@
     <a href="#/images/{{mode}}/{{meta.prev}}">&lt; {{meta.prev}}</a>
     <span>{{meta.id}}</span>
     <a href="#/images/{{mode}}/{{meta.next}}">{{meta.next}} &gt;</a>
+    <a href="" ng-click="change_group_mode()">Group size: {{group_mode}}</a>
 </toppanel>
 
 <div>
   <div class="photo-group" ng-repeat="group in groups">
-    <h2>{{group.first_date | date}} - {{group.last_date | date}}</h2>
+    <group-heading group="group"></group-heading>
     <div class="photo" ng-repeat="image in group.images">
       <a href="#/image/{{image.id}}">
         <img ng-src="scaled/150/{{image.file}}"/>
