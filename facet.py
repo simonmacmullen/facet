@@ -10,7 +10,7 @@ import sys
 import http.server
 import multiprocessing
 
-SCALED_SIZES = ["150", "1000"]
+SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
 #-----------------------------------------------------------------------------
 # Main
@@ -90,7 +90,7 @@ def todo_images(images, dest, db):
 def todo_image(f, t, dest, db):
     return id_from_filename(f) not in db \
         or db[id_from_filename(f)]['timestamp'] != t \
-        or any([todo_scaled_image(f, t, dest, size) for size in SCALED_SIZES])
+        or any([todo_scaled_image(f, t, dest, sz) for sz, _ in SCALED_SIZES])
 
 def todo_scaled_image(filename, timestamp, dest, size):
     scaled = scaled_filename(dest, size, filename)
@@ -109,7 +109,7 @@ def clean_db(files, db):
 
 def clean_scaled(files, dest):
     filename_set = set([f for (f, _t) in files])
-    for size in SCALED_SIZES:
+    for size, _ in SCALED_SIZES:
         top = os.path.join(dest, "scaled", size)
         for root, dirs, files in os.walk(top):
             for f in files:
@@ -145,7 +145,7 @@ def parse_scale_image_remote(args):
         return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
     height = int(out[3])
-    [scale_image(src, dest, filename, size) for size in SCALED_SIZES]
+    [scale_image(src, dest, filename, size, lim) for size, lim in SCALED_SIZES]
     return {'id':        id_from_filename(filename),
             'file':      filename,
             'keywords':  keywords,
@@ -155,12 +155,13 @@ def parse_scale_image_remote(args):
             'month':     month,
             'timestamp': timestamp}
 
-def scale_image(src, dest, filename, size):
+def scale_image(src, dest, filename, size, lim):
+    suffix = "" if lim == "max" else "^"
     scaled = scaled_filename(dest, size, filename)
     ensure_dir(scaled)
     cmd = ["convert", os.path.join(src, filename), "-auto-orient",
-           "-thumbnail", "{0}x{1}".format(size, size), "-unsharp", "0x.5",
-           scaled]
+           "-thumbnail", "{0}x{1}{2}".format(size, size, suffix),
+           "-unsharp", "0x.5", scaled]
     subprocess.check_call(cmd)
 
 def id_from_filename(f):

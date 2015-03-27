@@ -6,11 +6,11 @@
 </toppanel>
 
 <div>
-  <div class="photo-group" ng-repeat="group in groups">
+  <div class="photo-group clearfix" ng-repeat="group in groups">
     <group-heading group="group"></group-heading>
     <div class="photo" ng-repeat="image in group.images">
       <a href="#/image/{{image.id}}">
-        <img ng-src="scaled/150/{{image.file}}"/>
+        <img ng-src="scaled/120/{{image.file}}"/>
       </a>
     </div>
   </div>
