@@ -18,30 +18,36 @@ SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
-    parser.add_option("-s", "--symlink",
-                      action="store_true", dest="symlink", default=False,
+    parser.add_option("-d", "--develop-mode",
+                      action="store_true", dest="dev_mode", default=False,
                       help="symlink overlay files instead of copying")
+    parser.add_option("-c", "--copy-originals",
+                      action="store_true", dest="copy_orig", default=False,
+                      help="copy source images (instead of symlinking)")
+    parser.add_option("--ignore-originals",
+                      action="store_true", dest="ignore_orig", default=False,
+                      help="ignore source images (prevents downloads)")
     parser.add_option("-p", "--port",
                       dest="port", default=None,
                       help="if specified, launch an HTTP server after building")
-    (options, args) = parser.parse_args()
+    (opts, args) = parser.parse_args()
     if len(args) != 2:
         parser.print_help()
         exit(1)
     src = args[0]
     dest = args[1]
-    build(src, dest, options)
+    build(src, dest, opts)
 
-def build(src, dest, options):
+def build(src, dest, opts):
     print("\n Facet generator\n ---------------\n")
     dest_json = os.path.join(dest, "json")
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
-                  dest, options.symlink)
+                  dest, opts.dev_mode)
     files = find_images(src)
     db_path = os.path.join(dest_json, "db.json")
-    db = build_db(src, dest, files, db_path)
-    build_db_variants(dest_json, db)
-    maybe_launch_http(dest, options.port)
+    db = build_db(src, dest, files, db_path, opts)
+    build_db_variants(dest_json, db, opts)
+    maybe_launch_http(dest, opts.port)
 
 #-----------------------------------------------------------------------------
 # Find images
@@ -66,12 +72,12 @@ def plausible_image(f):
 # Build master database
 #-----------------------------------------------------------------------------
 
-def build_db(src, dest, files, db_path):
+def build_db(src, dest, files, db_path, opts):
     db = load_db(db_path)
-    todo = todo_images(files, dest, db)
+    todo = todo_images(files, dest, db, opts)
     print(" Images to update: {0} | Total: {1}".format(len(todo), len(files)))
-    update_images_in_db(src, dest, todo, db_path, db)
-    clean_scaled(files, dest)
+    update_images_in_db(src, dest, todo, db_path, db, opts)
+    clean_scaled(files, dest, opts)
     db = clean_db(files, db)
     write_json(db_path, db)
     print(" Complete\n")
@@ -84,13 +90,13 @@ def load_db(path):
     except FileNotFoundError as e:
         return {}
 
-def todo_images(images, dest, db):
-    return [(f, t) for (f, t) in images if todo_image(f, t, dest, db)]
+def todo_images(images, dest, db, opts):
+    return [(f, t) for (f, t) in images if todo_image(f, t, dest, db, opts)]
 
-def todo_image(f, t, dest, db):
+def todo_image(f, t, dest, db, opts):
     return id_from_filename(f) not in db \
         or db[id_from_filename(f)]['timestamp'] != t \
-        or any([todo_scaled_image(f, t, dest, sz) for sz, _ in SCALED_SIZES])
+        or any([todo_scaled_image(f, t, dest, sz) for sz in scaled_sizes(opts)])
 
 def todo_scaled_image(filename, timestamp, dest, size):
     scaled = scaled_filename(dest, size, filename)
@@ -107,10 +113,10 @@ def clean_db(files, db):
     print(" Removed {0} old images".format(i))
     return db
 
-def clean_scaled(files, dest):
+def clean_scaled(files, dest, opts):
     filename_set = set([f for (f, _t) in files])
-    for size, _ in SCALED_SIZES:
-        top = os.path.join(dest, "scaled", size)
+    for size in scaled_sizes(opts):
+        top = scaled_parent(dest, size)
         for root, dirs, files in os.walk(top):
             for f in files:
                 fullpath = os.path.join(root, f)
@@ -118,17 +124,17 @@ def clean_scaled(files, dest):
                 if relpath not in filename_set:
                     os.remove(fullpath)
 
-def update_images_in_db(src, dest, images, db_path, db):
+def update_images_in_db(src, dest, images, db_path, db, opts):
     def progress(i, data):
         if 'error' not in data:
             db[id_from_filename(data['file'])] = data
         if i % 10 == 0: # in case of ctrl-c, checkpoint every so often
             write_json(db_path, db)
-    queue = [(src, dest, f, t) for (f, t) in images]
+    queue = [(src, dest, f, t, opts) for (f, t) in images]
     parallel_work(parse_scale_image_remote, queue, progress)
 
 def parse_scale_image_remote(args):
-    src, dest, filename, timestamp = args
+    src, dest, filename, timestamp, opts = args
     path = os.path.join(src, filename)
     fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
     cmd = ["identify", "-format", fmt, path]
@@ -145,7 +151,7 @@ def parse_scale_image_remote(args):
         return {'file': filename, 'error': 'no timestamp'}
     width = int(out[2])
     height = int(out[3])
-    [scale_image(src, dest, filename, size, lim) for size, lim in SCALED_SIZES]
+    [scale_image(src, dest, filename, sz) for sz in scaled_sizes(opts)]
     return {'id':        id_from_filename(filename),
             'file':      filename,
             'keywords':  keywords,
@@ -155,26 +161,49 @@ def parse_scale_image_remote(args):
             'month':     month,
             'timestamp': timestamp}
 
-def scale_image(src, dest, filename, size, lim):
-    suffix = "" if lim == "max" else "^"
-    scaled = scaled_filename(dest, size, filename)
-    ensure_dir(scaled)
-    cmd = ["convert", os.path.join(src, filename), "-auto-orient",
-           "-thumbnail", "{0}x{1}{2}".format(size, size, suffix),
-           "-unsharp", "0x.5", scaled]
-    subprocess.check_call(cmd)
+def scale_image(src, dest, filename, definition):
+    size, opt = definition
+    s = os.path.join(src, filename)
+    d = scaled_filename(dest, definition, filename)
+    ensure_dir(d)
+    if size == "orig":
+        if opt == "symlink":
+            relative_symlink(s, d)
+        else:
+            shutil.copy2(s, d)
+    else:
+        suffix = "" if opt == "max" else "^"
+        cmd = ["convert", s, "-auto-orient",
+               "-thumbnail", "{0}x{1}{2}".format(size, size, suffix),
+               "-unsharp", "0x.5", d]
+        subprocess.check_call(cmd)
 
 def id_from_filename(f):
     return f.replace('/', '-')
 
-def scaled_filename(dest, size, filename):
-    return os.path.join(dest, "scaled", size, filename)
+def scaled_filename(dest, definition, filename):
+    return os.path.join(scaled_parent(dest, definition), filename)
+
+def scaled_parent(dest, definition):
+    size, _ = definition
+    if size == "orig":
+        return os.path.join(dest, "original")
+    else:
+        return os.path.join(dest, "scaled", size)
+
+def scaled_sizes(options):
+    sizes = list(SCALED_SIZES)
+    if options.copy_orig:
+        sizes.append(("orig", "copy"))
+    elif not options.ignore_orig:
+        sizes.append(("orig", "symlink"))
+    return sizes
 
 #-----------------------------------------------------------------------------
 # Various sub-DBs
 #-----------------------------------------------------------------------------
 
-def build_db_variants(dest, db):
+def build_db_variants(dest, db, opts):
     images_by_keyword = {}
     images_by_month = {}
     all_images = []
@@ -188,10 +217,11 @@ def build_db_variants(dest, db):
     add_prev_next(all_images)
     keywords, keywords_by_id = dict_index(images_by_keyword)
     months, months_by_id = dict_index(images_by_month, reverse=True)
-    write_db_variants(dest, "keyword", images_by_keyword, keywords_by_id)
-    write_db_variants(dest, "month", images_by_month, months_by_id)
-    index = {'keywords': keywords,
-             'months':   months}
+    write_indexes(dest, "keyword", images_by_keyword, keywords_by_id)
+    write_indexes(dest, "month", images_by_month, months_by_id)
+    index = {'keywords':  keywords,
+             'months':    months,
+             'originals': not opts.ignore_orig}
     write_json(os.path.join(dest, "index.json"), index)
     [write_json(os.path.join(dest, "id", "{0}.json".format(image['id'])), image)
      for image in all_images]
@@ -201,7 +231,7 @@ def db_dict_add(key, val, dic):
         dic[key] = []
     dic[key].append(val)
 
-def write_db_variants(dest, key_type, images_by_key, keys_by_id):
+def write_indexes(dest, key_type, images_by_key, keys_by_id):
     for key in images_by_key:
         images = images_by_key[key]
         sort_images(images)
@@ -236,7 +266,6 @@ def sort_images(images):
 
 # shutil.copytree() requires that dest not exist. grr.
 def copytree_over(src, dest, create_symlinks=False):
-    src = os.path.abspath(src)
     if not os.path.exists(dest):
         os.makedirs(dest)
     for item in os.listdir(src):
@@ -248,7 +277,7 @@ def copytree_over(src, dest, create_symlinks=False):
             if os.path.lexists(d):
                 os.remove(d)
             if create_symlinks:
-                os.symlink(s, d)
+                relative_symlink(s, d)
             else:
                 shutil.copy2(s, d)
 
@@ -259,6 +288,9 @@ def write_json(path, thing):
 
 def ensure_dir(f):
     os.makedirs(os.path.dirname(f), exist_ok = True)
+
+def relative_symlink(s, d):
+    os.symlink(os.path.relpath(os.path.abspath(s), os.path.dirname(d)), d)
 
 def parallel_work(work_fun, queue, progress_fun = None):
     total = len(queue)
