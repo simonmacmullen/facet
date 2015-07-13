@@ -296,7 +296,9 @@ def ensure_dir(f):
     os.makedirs(os.path.dirname(f), exist_ok = True)
 
 def relative_symlink(s, d):
-    os.symlink(os.path.relpath(os.path.abspath(s), os.path.dirname(d)), d)
+    if os.path.isfile(d):
+        os.remove(d)
+    os.symlink(os.path.relpath(os.path.abspath(s), d), d)
 
 def parallel_work(work_fun, queue, progress_fun = None):
     total = len(queue)
