@@ -169,7 +169,7 @@ def scale_image(src, dest, filename, definition):
     ensure_dir(d)
     if size == "orig":
         if opt == "symlink":
-            relative_symlink(s, d)
+            make_symlink(s, d)
         else:
             shutil.copy2(s, d)
     else:
@@ -283,7 +283,7 @@ def copytree_over(src, dest, create_symlinks=False):
             if os.path.lexists(d):
                 os.remove(d)
             if create_symlinks:
-                relative_symlink(s, d)
+                make_symlink(s, d)
             else:
                 shutil.copy2(s, d)
 
@@ -295,10 +295,10 @@ def write_json(path, thing):
 def ensure_dir(f):
     os.makedirs(os.path.dirname(f), exist_ok = True)
 
-def relative_symlink(s, d):
+def make_symlink(s, d):
     if os.path.isfile(d):
         os.remove(d)
-    os.symlink(os.path.relpath(os.path.abspath(s), d), d)
+    os.symlink(os.path.abspath(s), d)
 
 def parallel_work(work_fun, queue, progress_fun = None):
     total = len(queue)
