@@ -1,0 +1,15 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="facet-image-list">
+  <template>
+    <template is="dom-repeat" items="[[images]]" initial-count="4">
+      <a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
+    </template>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'facet-image-list',
+    });
+  </script>
+</dom-module>

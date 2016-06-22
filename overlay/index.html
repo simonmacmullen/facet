@@ -1,13 +1,34 @@
-<!DOCTYPE html>
-<html ng-app="facetApp">
-  <head>
-    <title ng-bind="title">Facet</title>
-    <link rel="stylesheet" href="css/main.css" />
-    <script src="js/lib/angular.min.js"></script>
-    <script src="js/lib/angular-route.min.js"></script>
-    <script src="js/main.js"></script>
-  </head>
-  <body>
-    <div ng-view></div>
-  </body>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <title>facet</title>
+  <meta name="theme-color" content="#fff">
+  <link rel="import" href="/src/facet-app.html" async>
+
+  <style>
+  </style>
+</head>
+<body>
+  <facet-app>Loading...</facet-app>
+
+  <script>
+    window.performance && performance.mark && performance.mark('index.html');
+
+    Polymer = {lazyRegister: true, dom: 'shadow'};
+
+    (function() {
+      if ('registerElement' in document
+          && 'import' in document.createElement('link')
+          && 'content' in document.createElement('template')) {
+        // platform is good!
+      } else {
+        // polyfill the platform!
+        var e = document.createElement('script');
+        e.src = '/bower_components/webcomponentsjs/webcomponents-lite.min.js';
+        document.body.appendChild(e);
+      }
+    })();
+  </script>
+</body>
 </html>

@@ -1,0 +1,39 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="facet-data.html">
+
+<dom-module id="facet-image">
+  <template>
+    <style>
+
+    </style>
+
+    <app-route
+        route="[[route]]"
+        pattern="/image/:imageId"
+        data="{{routeData}}"></app-route>
+
+    <facet-data
+        image-id="[[routeData.imageId]]"
+        image="{{image}}"></facet-data>
+
+    <header>
+      <h1>image: [[image.id]]</h1>
+    </header>
+
+    <div>
+      <img src="scaled/1000/[[image.file]]" />
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'facet-image',
+
+      properties: {
+        route: Object,
+      },
+    });
+  </script>
+</dom-module>

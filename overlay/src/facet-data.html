@@ -1,0 +1,94 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="facet-data">
+  <script>
+  (function() {
+    Polymer({
+      is: 'facet-data',
+
+      properties: {
+        index: {
+          type: Object,
+          notify: true
+        },
+
+	monthId: {
+	  type: String,
+	  observer: '_getMonth',
+	},
+
+	month: {
+          type: Object,
+          notify: true
+	},
+
+	keywordId: {
+	  type: String,
+	  observer: '_getKeyword',
+	},
+
+	keyword: {
+          type: Object,
+          notify: true
+	},
+
+	imageId: {
+	  type: String,
+	  observer: '_getImage',
+	},
+
+	image: {
+          type: Object,
+          notify: true
+	},
+      },
+      
+      ready: function() {
+	if (this.index) return;
+	this._getItem('/data/index.json', 'index');
+      },
+      
+      _getMonth: function(monthId) {
+	this._getItem('/data/month/' + monthId + '.json', 'month');
+      },
+
+      _getKeyword: function(keywordId) {
+	this._getItem('/data/keyword/' + keywordId + '.json', 'keyword');
+      },
+
+      _getImage: function(imageId) {
+        this._getItem('/data/id/' + imageId + '.json', 'image');
+      },
+
+      _getItem: function(path, dest) {
+        this._getResource({
+          url: path,
+          onLoad: function(e) {
+	    this.set(dest, JSON.parse(e.target.responseText));
+          },
+          onError: function(e) {
+            throw(e);
+          }
+        }, 3);
+      },
+
+      _getResource: function(rq, attempts) {
+        var xhr = new XMLHttpRequest();
+        xhr.addEventListener('load', rq.onLoad.bind(this));
+        xhr.addEventListener('error', function(e) {
+          // Flaky connections might fail fetching resources
+          if (attempts > 1) {
+            this.debounce('_getResource', this._getResource.bind(this, rq, attempts - 1), 200);
+          } else {
+            rq.onError.call(this, e);
+          }
+        }.bind(this));
+
+        xhr.open('GET', rq.url);
+        xhr.send();
+      },
+    });
+  })();
+
+  </script>
+</dom-module>

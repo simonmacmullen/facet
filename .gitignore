@@ -1,4 +1,6 @@
 *~
+overlay/build
+overlay/bower_components
 
 # For testing
 test

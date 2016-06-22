@@ -41,7 +41,7 @@ def main():
 
 def build(src, dest, opts):
     print("\n Facet generator\n ---------------\n")
-    dest_json = os.path.join(dest, "json")
+    dest_json = os.path.join(dest, "data")
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
                   dest, opts.dev_mode)
     files = find_images(src)

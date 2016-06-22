@@ -1,0 +1,30 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="facet-data.html">
+
+<dom-module id="facet-by-keyword">
+  <template>
+    <app-route
+        route="[[route]]"
+        pattern="/by-keyword/:keywordId"
+        data="{{routeData}}"></app-route>
+
+    <facet-data
+        keyword-id="[[routeData.keywordId]]"
+        keyword="{{keyword}}"></facet-data>
+
+    <header>
+      <h1>keyword: [[keyword.meta.id]]</h1>
+    </header>
+
+    <facet-image-list images="[[keyword.images]]"/>
+  </template>
+  <script>
+    Polymer({
+      is: 'facet-by-keyword',
+
+      properties: {
+        route: Object,
+      },
+    });
+  </script>
+</dom-module>

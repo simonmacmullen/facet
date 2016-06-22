@@ -1,0 +1,30 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="facet-data.html">
+
+<dom-module id="facet-by-month">
+  <template>
+    <app-route
+        route="[[route]]"
+        pattern="/by-month/:monthId"
+        data="{{routeData}}"></app-route>
+
+    <facet-data
+        month-id="[[routeData.monthId]]"
+        month="{{month}}"></facet-data>
+
+    <header>
+      <h1>month: [[month.meta.id]]</h1>
+    </header>
+
+    <facet-image-list images="[[month.images]]"/>
+  </template>
+  <script>
+    Polymer({
+      is: 'facet-by-month',
+
+      properties: {
+        route: Object,
+      },
+    });
+  </script>
+</dom-module>
