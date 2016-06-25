@@ -1,0 +1,37 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/effects/waterfall.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="facet-styles.html">
+
+<dom-module id="facet-header">
+  <template>
+    <style include="facet-styles">
+      .box { border: 2px solid #666; padding: 8px; border-radius: 10px; margin-bottom: 10px; }
+      h1 { font-weight: normal; margin: 0 0 0.2em 0; font-family: times; font-size: 1.8em; }
+      b { font-weight: normal; color: #ddd; }
+      nav a, header nav span { margin-right: 5px; }
+      a, table.metadata a { background: #222; padding: 2px; border-radius: 3px; font-size: 0.9em; }
+    </style>
+
+    <app-header role="navigation" id="header" reveals>
+      <div class="box">
+	<h1><b>{{title}}</b> - Facet image viewer</h1>
+	<nav>
+          <a href="#/keywords">All keywords</a>
+          <a href="#/months">All months</a>
+	  <content/>
+	</nav>
+      </div>
+    </app-header>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'facet-header',
+
+      properties: {
+      },
+    });
+  </script>
+</dom-module>

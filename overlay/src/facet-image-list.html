@@ -1,9 +1,18 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="facet-styles.html">
 
 <dom-module id="facet-image-list">
   <template>
+    <style include="facet-styles">
+      .photo { margin: 0 8px 8px 0; position: relative; width: 120px; height: 120px; display: inline-block; }
+      a { display: block; position: absolute; width: 120px; height: 120px; overflow: hidden; line-height: 0;}
+      a:hover { left: -2px; top: -2px; width: auto; height: auto; border: 2px solid black; z-index: 1; }
+    </style>
+
     <template is="dom-repeat" items="[[images]]" initial-count="4">
-      <a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
+      <div class="photo">
+	<a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
+      </div>
     </template>
   </template>
 

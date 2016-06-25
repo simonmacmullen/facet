@@ -2,11 +2,12 @@
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="facet-data.html">
+<link rel="import" href="facet-styles.html">
 
 <dom-module id="facet-image">
   <template>
-    <style>
-
+    <style include="facet-styles">
+      img { margin-bottom: 10px; border: 2px solid black; }
     </style>
 
     <app-route
@@ -18,13 +19,11 @@
         image-id="[[routeData.imageId]]"
         image="{{image}}"></facet-data>
 
-    <header>
-      <h1>image: [[image.id]]</h1>
-    </header>
+    <facet-header title="[[image.id]]">
 
-    <div>
-      <img src="scaled/1000/[[image.file]]" />
-    </div>
+    </facet-header>
+
+    <img src="scaled/1000/[[image.file]]" />
   </template>
 
   <script>

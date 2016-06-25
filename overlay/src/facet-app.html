@@ -1,12 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
-<link rel="import" href="../bower_components/app-layout/app-scroll-effects/effects/waterfall.html">
-<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
-<link rel="import" href="../bower_components/app-layout/helpers/helpers.html">
 <link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
-<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../bower_components/iron-media-query/iron-media-query.html">
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="facet-data.html">
@@ -15,12 +9,10 @@
 <link rel="import" href="facet-months.html">
 <link rel="import" href="facet-keywords.html">
 <link rel="import" href="facet-image-list.html">
+<link rel="import" href="facet-image.html">
 
 <dom-module id="facet-app">
   <template>
-    <style>
-
-    </style>
     <!--
       app-location and app-route elements provide the state of the URL for the app.
     -->
@@ -33,10 +25,6 @@
 
     <facet-data index="{{index}}"></facet-data>
 
-    <app-header role="navigation" id="header" reveals>
-      Facet in polymer
-    </app-header>
-
     <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible">
       <facet-months name="months" route="[[route]]"></facet-months>
       <facet-keywords name="keywords" route="[[route]]"></facet-keywords>
@@ -47,17 +35,12 @@
   </template>
 
   <script>
-    // performance logging
-    window.performance && performance.mark && performance.mark('facet-app - before register');
-
     Polymer({
       is: 'facet-app',
 
       properties: {
         page: {
           type: String,
-          reflectToAttribute: true,
-          observer: '_pageChanged'
         },
       },
 
@@ -84,51 +67,6 @@
 	  //this.$.appRoute.route = '/by-month/' + index.months[0].id;
 	  window.location.hash = '/by-month/' + index.months[0].id;
 	}
-      },
-      
-      _pageChanged: function(page, oldPage) {
-        if (page != null) {
-          // home route is eagerly loaded
-          if (page == 'home') {
-            this._pageLoaded(Boolean(oldPage));
-          // other routes are lazy loaded
-          } else {
-            this.importHref(
-              this.resolveUrl('facet-' + page + '.html'),
-              function() {
-                this._pageLoaded(Boolean(oldPage));
-              }, null, true);
-          }
-        }
-      },
-
-      _pageLoaded: function(shouldResetLayout) {
-        this._ensureLazyLoaded();
-        if (shouldResetLayout) {
-          // The size of the header depends on the page (e.g. on some pages the tabs
-          // do not appear), so reset the header's layout only when switching pages.
-          this.async(function() {
-            this.$.header.resetLayout();
-          }, 1);
-        }
-      },
-
-      _ensureLazyLoaded: function() {
-        // load lazy resources after render and set `loadComplete` when done.
-        if (!this.loadComplete) {
-          Polymer.RenderStatus.afterNextRender(this, function() {
-            this.importHref(this.resolveUrl('lazy-resources.html'), function() {
-              this.loadComplete = true;
-            });
-          });
-        }
-      },
-
-      // Elements in the app can notify section changes.
-      // Response by a11y announcing the section and syncronizing the category.
-      _onChangeSection: function(event) {
-        var detail = event.detail;
-        this.categoryName = detail.category || '';
       },
     });
   </script>
