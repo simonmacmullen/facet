@@ -3,6 +3,7 @@
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-header.html">
 <link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-formatting.html">
 
 <dom-module id="facet-keywords">
   <template>
@@ -34,9 +35,11 @@
         route: Object,
       },
 
+      behaviors: [window.Formatting],
+
       logSize: function(count) {
         return Math.max(Math.log10(count), 0.8);
-      }
+      },
     });
   </script>
 </dom-module>

@@ -3,11 +3,14 @@
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-formatting.html">
 
 <dom-module id="facet-image">
   <template>
     <style include="facet-styles">
       img { margin-bottom: 10px; border: 2px solid black; }
+      .metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
+      .metadata th { color: #ddd; font-weight: normal; text-align: right; }
     </style>
 
     <app-route
@@ -20,10 +23,36 @@
         image="{{image}}"></facet-data>
 
     <facet-header title="[[image.id]]">
-
+      <span>Similar:</span>
+      <template is="dom-repeat" items="[[image.keywords]]">
+	<a class="chip" href="#/by-keyword/{{item}}">[[item]]</a>
+      </template>
+      <a class="chip" href="#/by-month/{{image.month}}">[[fmtMonth(image.month)]]</a>
     </facet-header>
 
     <img src="scaled/1000/[[image.file]]" />
+    
+    <table class="metadata">
+      <tr>
+	<th>Keywords</th>
+	<td>
+	  <template is="dom-repeat" items="[[image.keywords]]">
+            <a class="chip" href="#/by-keyword/[[item]]">[[item]]</a>&nbsp;
+	  </template>
+	</td>
+      </tr>
+      <tr>
+	<th>Full size</th>
+	<td>
+	  <a href="original/[[image.file]]">Download [[image.width]]x[[image.height]]</a>
+	</td>
+      </tr>
+      <tr>
+	<th>Time taken</th>
+	<td>[[fmtDateFull(image.taken)]]</td>
+      </tr>
+    </table>
+
   </template>
 
   <script>
@@ -33,6 +62,8 @@
       properties: {
         route: Object,
       },
+
+      behaviors: [window.Formatting],
     });
   </script>
 </dom-module>

@@ -1,5 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-formatting.html">
 
 <dom-module id="facet-image-list">
   <template>
@@ -7,18 +8,68 @@
       .photo { margin: 0 8px 8px 0; position: relative; width: 120px; height: 120px; display: inline-block; }
       a { display: block; position: absolute; width: 120px; height: 120px; overflow: hidden; line-height: 0;}
       a:hover { left: -2px; top: -2px; width: auto; height: auto; border: 2px solid black; z-index: 1; }
+      h2 { font-size: 0.9em; font-weight: normal; margin: 0 0 5px 0; border-bottom: 1px solid #666; color: #666; }
     </style>
 
-    <template is="dom-repeat" items="[[images]]" initial-count="4">
-      <div class="photo">
-	<a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
-      </div>
+    <template is="dom-repeat" items="[[groupedImages]]">
+      <h2>
+	[[fmtDateMedium(item.firstDate)]]
+	<template is="dom-if" if="[[item.isRange]]">
+	  - [[fmtDateMedium(item.lastDate)]]
+	</template>
+      </h2>
+      <template is="dom-repeat" items="[[item.images]]">
+	<div class="photo">
+	  <a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
+	</div>
+      </template>
     </template>
   </template>
 
   <script>
     Polymer({
       is: 'facet-image-list',
+
+      properties: {
+        groupMode: {
+	  type: String,
+	  value: 'day',
+	},
+	
+	images: {
+	  type: Array,
+	},
+
+	groupedImages: {
+	  type: Array,
+	  computed: 'computeGroupedImages(groupMode, images)',
+	},
+      },
+
+      behaviors: [window.Formatting],
+
+      computeGroupedImages: function(groupMode, ungrouped) {
+	var result = [];
+	var date = null;
+	var current;
+	for (var i = 0; i < ungrouped.length; i++) {
+          var d = new Date(ungrouped[i].taken);
+          d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          var d2 = new Date(d.getFullYear(),
+                            (groupMode == 'year') ? 0 : d.getMonth(),
+                            (groupMode == 'day')  ? d.getDay() : 1);
+          if (date == null ||
+              (groupMode != 'forever' && date.getTime() != d2.getTime())) {
+            date = d2;
+            current = {lastDate:d, firstDate:null, images:[]};
+            result.push(current);
+          }
+          current.images.push(ungrouped[i]);
+	  current.firstDate = d;
+	  current.isRange = current.firstDate.getTime() !== current.lastDate.getTime();
+	}
+	return result;
+      },
     });
   </script>
 </dom-module>

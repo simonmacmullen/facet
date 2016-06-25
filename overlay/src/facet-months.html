@@ -2,6 +2,7 @@
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-formatting.html">
 
 <dom-module id="facet-months">
   <template>
@@ -23,13 +24,15 @@
 	<tr>
 	  <td>
 	    <template is="dom-repeat" items="[[item.thumbs]]">
-	      <img class="mini-photo" src="scaled/120/[[item]]" />
+	      <div class="mini-photo"
+		   style="background-image: url(scaled/120/[[item]]);">
+	      </div>
 	    </template>
 	  </td>
 	  <td>
-	    <a href="#/by-month/{{item.id}}">
-              {{item.id}}<br/>
-              {{item.count}} images
+	    <a href="#/by-month/[[item.id]]">
+              [[fmtMonth(item.id)]]<br/>
+              [[item.count]] images
 	    </a>
 	  </td>
 	</tr>
@@ -44,6 +47,8 @@
       properties: {
         route: Object,
       },
+
+      behaviors: [window.Formatting],
     });
   </script>
 </dom-module>

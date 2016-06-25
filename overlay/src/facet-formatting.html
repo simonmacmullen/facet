@@ -1,0 +1,32 @@
+  <script>
+  window.Formatting = window.Formatting || {
+    MONTHS: ['January', 'February', 'March', 'April', 'May', 'June',
+	     'July', 'August', 'September', 'October', 'November',
+	     'December'],
+
+    DAYS: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+
+    fmtMonth: function(input) {
+        input = input || '';
+        var yearMonth = input.split('-');
+        if (yearMonth.length != 2) return input;
+        var month = this.MONTHS[parseInt(yearMonth[1]) - 1];
+        return month + ' ' + yearMonth[0];
+    },
+
+    fmtDateFull: function(ts) {
+      var date = new Date(ts);
+      return date.toString();
+    },
+
+    fmtDateMedium: function(ts) {
+      var date = new Date(ts);
+      return [
+	this.DAYS[date.getDay()],
+	date.getDate(),
+	this.MONTHS[date.getMonth()],
+	1900 + date.getYear()
+      ].join(' ');
+    },
+  };
+</script>

@@ -10,16 +10,15 @@
       .box { border: 2px solid #666; padding: 8px; border-radius: 10px; margin-bottom: 10px; }
       h1 { font-weight: normal; margin: 0 0 0.2em 0; font-family: times; font-size: 1.8em; }
       b { font-weight: normal; color: #ddd; }
-      nav a, header nav span { margin-right: 5px; }
-      a, table.metadata a { background: #222; padding: 2px; border-radius: 3px; font-size: 0.9em; }
+      nav a, .box nav ::content span { margin-right: 5px; }
     </style>
 
     <app-header role="navigation" id="header" reveals>
       <div class="box">
 	<h1><b>{{title}}</b> - Facet image viewer</h1>
 	<nav>
-          <a href="#/keywords">All keywords</a>
-          <a href="#/months">All months</a>
+          <a class="chip" href="#/keywords">All keywords</a>
+          <a class="chip" href="#/months">All months</a>
 	  <content/>
 	</nav>
       </div>
