@@ -1,0 +1,33 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="facet-group-mode">
+  <template>
+    <style include="facet-styles">
+      .chip { cursor: pointer; }
+    </style>
+
+    <a class="chip" on-tap="changeGroup">Group size: [[groupMode]]</a>
+  </template>
+  <script>
+    Polymer({
+      is: 'facet-group-mode',
+
+      properties: {
+        groupMode: {
+	  type: String,
+          value: 'month',
+          notify: true,
+	},
+      },
+
+      changeGroup: function() {
+	switch (this.groupMode) {
+            case 'forever': this.groupMode = 'year';    break;
+            case 'year':    this.groupMode = 'month';   break;
+            case 'month':   this.groupMode = 'day';     break;
+            case 'day':     this.groupMode = 'forever'; break;
+        }
+      },
+    });
+  </script>
+</dom-module>

@@ -1,5 +1,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="facet-data.html">
+<link rel="import" href="facet-formatting.html">
+<link rel="import" href="facet-group-mode.html">
 
 <dom-module id="facet-by-keyword">
   <template>
@@ -13,10 +15,10 @@
         keyword="{{keyword}}"></facet-data>
 
     <facet-header title="[[keyword.meta.id]]">
-
+      <facet-group-mode group-mode="{{groupMode}}"></facet-group-mode>
     </facet-header>
 
-    <facet-image-list images="[[keyword.images]]"/>
+    <facet-image-list group-mode="[[groupMode]]" images="[[keyword.images]]"/>
   </template>
   <script>
     Polymer({
@@ -25,6 +27,8 @@
       properties: {
         route: Object,
       },
+
+      behaviors: [window.Formatting],
     });
   </script>
 </dom-module>

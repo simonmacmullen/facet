@@ -1,14 +1,10 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-formatting.html">
-<link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-group-mode.html">
 
 <dom-module id="facet-by-month">
   <template>
-    <style include="facet-styles">
-      .chip { cursor: pointer; }
-    </style>
-
     <app-route
         route="[[route]]"
         pattern="/by-month/:monthId"
@@ -19,7 +15,7 @@
         month="{{month}}"></facet-data>
 
     <facet-header title="[[fmtMonth(month.meta.id)]]">
-      <a class="chip" on-tap="changeGroup">Group size: [[groupMode]]</a>
+      <facet-group-mode group-mode="{{groupMode}}"></facet-group-mode>
     </facet-header>
 
     <facet-image-list group-mode="[[groupMode]]" images="[[month.images]]"/>
@@ -30,22 +26,9 @@
 
       properties: {
         route: Object,
-        groupMode: {
-	  type: String,
-	  value: 'forever',
-	},
       },
 
       behaviors: [window.Formatting],
-
-      changeGroup: function() {
-	switch (this.groupMode) {
-            case 'forever': this.groupMode = 'year';    break;
-            case 'year':    this.groupMode = 'month';   break;
-            case 'month':   this.groupMode = 'day';     break;
-            case 'day':     this.groupMode = 'forever'; break;
-        }
-      },
     });
   </script>
 </dom-module>
