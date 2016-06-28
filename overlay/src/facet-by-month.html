@@ -1,10 +1,14 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="facet-data.html">
+<link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
 <link rel="import" href="facet-group-mode.html">
 
 <dom-module id="facet-by-month">
   <template>
+    <style include="facet-styles">
+    </style>
+
     <app-route
         route="[[route]]"
         pattern="/by-month/:monthId"
@@ -15,6 +19,16 @@
         month="{{month}}"></facet-data>
 
     <facet-header title="[[fmtMonth(month.meta.id)]]">
+      <template is="dom-if" if="[[month.meta.prev]]">
+	<a class="chip" href="#/by-month/[[month.meta.prev]]">
+	  &lt; [[fmtMonth(month.meta.prev)]]
+	</a>
+      </template>
+      <template is="dom-if" if="[[month.meta.next]]">
+	<a class="chip" href="#/by-month/[[month.meta.next]]">
+	  [[fmtMonth(month.meta.next)]] &gt;
+	</a>
+      </template>
       <facet-group-mode group-mode="{{groupMode}}"></facet-group-mode>
     </facet-header>
 
