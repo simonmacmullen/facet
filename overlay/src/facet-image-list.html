@@ -1,4 +1,5 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
 
@@ -20,7 +21,9 @@
       </h2>
       <template is="dom-repeat" items="[[item.images]]">
 	<div class="photo">
-	  <a href="#/image/[[item.id]]"><img src="scaled/120/[[item.file]]" /></a>
+	  <a href="#/image/[[item.id]]">
+	    <iron-image preload style="background-color: #222; width: 120px; height: 120px;" src="scaled/120/[[item.file]]"></iron-image>
+	  </a>
 	</div>
       </template>
     </template>
