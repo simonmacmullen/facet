@@ -16,7 +16,17 @@
 
     fmtDateFull: function(ts) {
       var date = new Date(ts);
-      return date.toString();
+      return [
+	this.DAYS[date.getDay()],
+	date.getDate(),
+	this.MONTHS[date.getMonth()],
+	1900 + date.getYear(),
+	[
+	  date.getHours(),
+	  date.getMinutes(),
+	  date.getSeconds()
+	].join(':')
+      ].join(' ');
     },
 
     fmtDateMedium: function(ts) {

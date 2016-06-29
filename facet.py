@@ -10,6 +10,7 @@ import sys
 import http.server
 import multiprocessing
 import random
+import re
 
 SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
@@ -137,21 +138,23 @@ def update_images_in_db(src, dest, images, db_path, db, opts):
 def parse_scale_image_remote(args):
     src, dest, filename, timestamp, opts = args
     path = os.path.join(src, filename)
-    fmt = "%[IPTC:2:25]\n%[EXIF:DateTimeOriginal]\n%[width]\n%[height]"
+    fmt = "%[IPTC:2:25]\n%[width]\n%[height]\n%[EXIF:*]"
     cmd = ["identify", "-format", fmt, path]
     out = subprocess.check_output(cmd).decode('utf-8').splitlines()
     if out[0] == '':
         keywords = []
     else:
         keywords = out[0].split(';')
+    width = int(out[1])
+    height = int(out[2])
+    exif = parse_exif(out[3:])
     try:
-        taken = datetime.strptime(out[1], "%Y:%m:%d %H:%M:%S")
+        taken = datetime.strptime(exif['DateTimeOriginal'], "%Y:%m:%d %H:%M:%S")
+        del exif['DateTimeOriginal']
         month = taken.strftime('%Y-%m')
         taken = int(taken.timestamp() * 1000) # Javascript expects millis
     except ValueError as e:
         return {'file': filename, 'error': 'no timestamp'}
-    width = int(out[2])
-    height = int(out[3])
     [scale_image(src, dest, filename, sz) for sz in scaled_sizes(opts)]
     return {'id':        id_from_filename(filename),
             'file':      filename,
@@ -160,7 +163,34 @@ def parse_scale_image_remote(args):
             'height':    height,
             'taken':     taken,
             'month':     month,
+            'exif':      exif,
             'timestamp': timestamp}
+
+GOOD_EXIF = ['DateTimeOriginal',
+             'ExposureTime',
+             'FNumber',
+             'FocalLength',
+             'ISOSpeedRatings',
+             'Make',
+             'Model']
+
+RATIONAL_EXIF = ['ExposureTime',
+                 'FNumber',
+                 'FocalLength']
+
+def parse_exif(exif_list):
+    exif = {}
+    for item in exif_list:
+        match = re.search('exif:([A-Za-z:]*)=(.*)', item)
+        if match:
+            k = match.group(1)
+            v = match.group(2)
+            if k in GOOD_EXIF:
+                if k in RATIONAL_EXIF:
+                    (num, den) = v.split('/')
+                    v = int(num) / int(den)
+                exif[k] = v
+    return exif
 
 def scale_image(src, dest, filename, definition):
     size, opt = definition

@@ -9,8 +9,11 @@
   <template>
     <style include="facet-styles">
       .metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
-      .metadata th { color: #ddd; font-weight: normal; text-align: right; }
+      .metadata th { color: #ddd; font-weight: normal; text-align: right; padding-right: 5px; }
+      .metadata th, .metadata td { vertical-align: top; }
       iron-image2 { --iron-image-max-width: 96vw; --iron-image-max-height: 96vh; margin-bottom: 10px; border: 2px solid black; }
+      .f-stop { font-style: italic; font-family: serif; }
+      .divider { color: #666; }
     </style>
 
     <app-route
@@ -34,7 +37,7 @@
     
     <table class="metadata">
       <tr>
-	<th>Keywords</th>
+	<th>Keywords:</th>
 	<td>
 	  <template is="dom-repeat" items="[[image.keywords]]">
             <a class="chip" href="#/by-keyword/[[item]]">[[item]]</a>&nbsp;
@@ -42,14 +45,24 @@
 	</td>
       </tr>
       <tr>
-	<th>Full size</th>
+	<th>Full size:</th>
 	<td>
-	  <a target="_blank" href="original/[[image.file]]">Download [[image.width]]x[[image.height]]</a>
+	  <a class="chip" target="_blank" href="original/[[image.file]]">Download [[image.width]]x[[image.height]]</a>
 	</td>
       </tr>
       <tr>
-	<th>Time taken</th>
+	<th>Taken:</th>
 	<td>[[fmtDateFull(image.taken)]]</td>
+      </tr>
+      <tr>
+	<th>With:</th>
+	<td>
+	  [[image.exif.Make]] [[image.exif.Model]]<br/>
+	  [[exposure(image.exif.ExposureTime)]]  <span class="divider">|</span>
+	  <span class="f-stop">f</span>/[[image.exif.FNumber]] <span class="divider">|</span>
+	  ISO [[image.exif.ISOSpeedRatings]]  <span class="divider">|</span>
+	  [[image.exif.FocalLength]]mm
+	</td>
       </tr>
     </table>
 
@@ -64,6 +77,10 @@
       },
 
       behaviors: [window.Formatting],
+
+      exposure: function(n) {
+	return '1/' + Math.round(1/n) + 's';
+      }
     });
   </script>
 </dom-module>
