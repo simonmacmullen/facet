@@ -1,6 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
-<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="iron-image2.html">
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
@@ -10,7 +10,7 @@
     <style include="facet-styles">
       .metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
       .metadata th { color: #ddd; font-weight: normal; text-align: right; }
-      .scale { max-width: 96vw; max-height: 96vh; margin-bottom: 10px; border: 2px solid black; }
+      iron-image2 { --iron-image-max-width: 96vw; --iron-image-max-height: 96vh; margin-bottom: 10px; border: 2px solid black; }
     </style>
 
     <app-route
@@ -30,7 +30,7 @@
       <a class="chip" href="#/by-month/{{image.month}}">[[fmtMonth(image.month)]]</a>
     </facet-header>
 
-    <iron-image class="scale" src="scaled/1000/[[image.file]]"></iron-image>
+    <iron-image2 src="scaled/1000/[[image.file]]"></iron-image2>
     
     <table class="metadata">
       <tr>

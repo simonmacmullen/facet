@@ -1,15 +1,16 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="iron-image2.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
 
 <dom-module id="facet-image-list">
   <template>
     <style include="facet-styles">
-      .photo { margin: 0 8px 8px 0; position: relative; width: 120px; height: 120px; display: inline-block; }
-      a { display: block; position: absolute; width: 120px; height: 120px; overflow: hidden; line-height: 0; }
-      a:hover { left: -2px; top: -2px; width: auto; height: auto; border: 2px solid black; z-index: 1; }
+      .photo { margin: 0 8px 8px 0; display: inline-block; }
+      a { display: block; width: 120px; height: 120px; overflow: hidden; border: 2px solid #333; }
+      a:hover { border: 2px solid black; }
       h2 { font-size: 0.9em; font-weight: normal; margin: 0 0 5px 0; border-bottom: 1px solid #666; color: #666; }
+      iron-image2 { background-color: #222; width: 120px; height: 120px; }
     </style>
 
     <template is="dom-repeat" items="[[groupedImages]]">
@@ -22,7 +23,7 @@
       <template is="dom-repeat" items="[[item.images]]">
 	<div class="photo">
 	  <a href="#/image/[[item.id]]">
-	    <iron-image preload style="background-color: #222; width: 120px; height: 120px;" src="scaled/120/[[item.file]]"></iron-image>
+	    <iron-image2 preload src="scaled/120/[[item.file]]"></iron-image2>
 	  </a>
 	</div>
       </template>
