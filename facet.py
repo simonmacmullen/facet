@@ -136,21 +136,26 @@ def update_images_in_db(src, dest, images, db_path, db, opts):
     parallel_work(parse_scale_image_remote, queue, progress)
 
 def parse_scale_image_remote(args):
+    def invoke(cmd):
+        return subprocess.check_output(cmd).decode('utf-8').splitlines()
+    def remove(d, k, default = None):
+        if k in d:
+            v = d[k]
+            del d[k]
+            return v
+        return default
+
     src, dest, filename, timestamp, opts = args
     path = os.path.join(src, filename)
-    fmt = "%[IPTC:2:25]\n%[width]\n%[height]\n%[EXIF:*]"
-    cmd = ["identify", "-format", fmt, path]
-    out = subprocess.check_output(cmd).decode('utf-8').splitlines()
-    if out[0] == '':
-        keywords = []
-    else:
-        keywords = out[0].split(';')
-    width = int(out[1])
-    height = int(out[2])
-    exif = parse_exif(out[3:])
+    out = invoke(["identify", "-format", "%[width]\n%[height]\n", path])
+    width = int(out[0])
+    height = int(out[1])
+
+    exif = parse_exif(invoke(["exiv2", "-PEIkv", path]))
+    keywords = remove(exif, 'Keywords', [])
     try:
-        taken = datetime.strptime(exif['DateTimeOriginal'], "%Y:%m:%d %H:%M:%S")
-        del exif['DateTimeOriginal']
+        taken = datetime.strptime(
+            remove(exif, 'DateTimeOriginal'), "%Y:%m:%d %H:%M:%S")
         month = taken.strftime('%Y-%m')
         taken = int(taken.timestamp() * 1000) # Javascript expects millis
     except ValueError as e:
@@ -170,6 +175,9 @@ GOOD_EXIF = ['DateTimeOriginal',
              'ExposureTime',
              'FNumber',
              'FocalLength',
+             'FocalLengthIn35mmFilm',
+             'LensMake',
+             'LensModel',
              'ISOSpeedRatings',
              'Make',
              'Model']
@@ -178,10 +186,12 @@ RATIONAL_EXIF = ['ExposureTime',
                  'FNumber',
                  'FocalLength']
 
+REPEATING_EXIF = ['Keywords']
+
 def parse_exif(exif_list):
     exif = {}
     for item in exif_list:
-        match = re.search('exif:([A-Za-z:]*)=(.*)', item)
+        match = re.search('\w*\.\w*\.(\w*)\s*(\S.*)', item)
         if match:
             k = match.group(1)
             v = match.group(2)
@@ -190,6 +200,10 @@ def parse_exif(exif_list):
                     (num, den) = v.split('/')
                     v = int(num) / int(den)
                 exif[k] = v
+            elif k in REPEATING_EXIF:
+                if k not in exif:
+                    exif[k] = []
+                exif[k].append(v)
     return exif
 
 def scale_image(src, dest, filename, definition):

@@ -22,7 +22,7 @@
 
     <div>
       <template is="dom-repeat" items="[[index.keywords]]">
-	<a href="#/by-keyword/[[item.id]]" style="font-size: [[logSize(item.count)]]em ;" title="[[item.count]] images">[[item.id]]</a>&nbsp;
+	<a href="#/by-keyword/[[fmtUrl(item.id)]]" style="font-size: [[logSize(item.count)]]em ;" title="[[item.count]] images">[[item.id]]</a>&nbsp;
       </template>
     </div>
   </template>
