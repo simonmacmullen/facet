@@ -158,7 +158,7 @@ def parse_scale_image_remote(args):
             remove(exif, 'DateTimeOriginal'), "%Y:%m:%d %H:%M:%S")
         month = taken.strftime('%Y-%m')
         taken = int(taken.timestamp() * 1000) # Javascript expects millis
-    except ValueError as e:
+    except Exception as e:
         return {'file': filename, 'error': 'no timestamp'}
     [scale_image(src, dest, filename, sz) for sz in scaled_sizes(opts)]
     return {'id':        id_from_filename(filename),
