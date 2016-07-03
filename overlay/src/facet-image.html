@@ -54,17 +54,36 @@
 	<th>Taken:</th>
 	<td>[[fmtDateFull(image.taken)]]</td>
       </tr>
-      <tr>
-	<th>With:</th>
-	<td>
-	  [[exposure(image.exif.ExposureTime)]] <span class="divider">|</span>
-	  <span class="f-stop">f</span>/[[image.exif.FNumber]] <span class="divider">|</span>
-	  ISO [[image.exif.ISOSpeedRatings]] <span class="divider">|</span>
-	  <span title="[[image.exif.FocalLengthIn35mmFilm]]mm equivalent @35mm">[[image.exif.FocalLength]]mm</span> <span class="divider">|</span>
-	  <span title="[[image.exif.Make]]">[[image.exif.Model]]</span> <span class="divider">|</span>
-	  <span title="[[image.exif.LensMake]]">[[image.exif.LensModel]]</span>
-	</td>
-      </tr>
+      <template is="dom-if" if="[[notEmpty(image.exif)]]">
+	<tr>
+	  <th>With:</th>
+	  <td>
+	    <template is="dom-if" if="[[image.exif.ExposureTime]]">
+	      [[exposure(image.exif.ExposureTime)]]
+	    </template>
+	    <template is="dom-if" if="[[image.exif.FNumber]]">
+	      <span class="divider">|</span>
+	      <span class="f-stop">f</span>/[[image.exif.FNumber]]
+	    </template>
+	    <template is="dom-if" if="[[image.exif.ISOSpeedRatings]]">
+	      <span class="divider">|</span>
+	      ISO [[image.exif.ISOSpeedRatings]]
+	    </template>
+	    <template is="dom-if" if="[[image.exif.FocalLength]]">
+	      <span class="divider">|</span>
+	      <span title="[[image.exif.FocalLengthIn35mmFilm]]mm equivalent @35mm">[[image.exif.FocalLength]]mm</span>
+	    </template>
+	    <template is="dom-if" if="[[image.exif.Model]]">
+	      <span class="divider">|</span>
+	      <span title="[[image.exif.Make]]">[[image.exif.Model]]</span>
+	    </template>
+	    <template is="dom-if" if="[[image.exif.LensModel]]">
+	      <span class="divider">|</span>
+	      <span title="[[image.exif.LensMake]]">[[image.exif.LensModel]]</span>
+	    </template>
+	  </td>
+	</tr>
+      </template>
     </table>
 
   </template>
@@ -81,6 +100,10 @@
 
       exposure: function(n) {
 	return '1/' + Math.round(1/n) + 's';
+      },
+
+      notEmpty: function(d) {
+	return typeof(d) === 'object' && Object.keys(d).length > 0;
       }
     });
   </script>
