@@ -1,0 +1,36 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="facet-styles.html">
+<link rel="import" href="facet-formatting.html">
+
+<dom-module id="facet-keyword-list">
+  <template>
+    <style include="facet-styles">
+      .group { display: flex; margin-bottom: 30px; align-items: baseline; flex-wrap: wrap; }
+      .group a { margin-bottomn: 5px; }
+    </style>
+
+    <div class="group">
+      <template is="dom-repeat" items="[[list]]">
+	<a class="chip" href="#/by/[[type]]/[[fmtUrl(item.id)]]" style="font-size: [[logSize(item.count)]]em ;" title="[[item.count]] images">[[item.id]]</a>&nbsp;
+      </template>
+    </div>
+  </template>
+
+
+  <script>
+    Polymer({
+      is: 'facet-keyword-list',
+
+      properties: {
+        type: String,
+        list: Array,
+      },
+
+      behaviors: [window.Formatting],
+
+      logSize: function(count) {
+        return Math.max(Math.log10(count), 0.8);
+      },
+    });
+  </script>
+</dom-module>
