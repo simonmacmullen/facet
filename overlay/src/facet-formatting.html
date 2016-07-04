@@ -43,6 +43,11 @@
       return encodeURIComponent(s);
     },
 
+    fmtCap: function(s) {
+      if (s === undefined) return s;
+      return s.charAt(0).toUpperCase() + s.substr(1);
+    },
+
     dbg: function(o) {
       console.log(o);
       return JSON.stringify(o);

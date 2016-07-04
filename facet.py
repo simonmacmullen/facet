@@ -253,56 +253,69 @@ def scaled_sizes(options):
 #-----------------------------------------------------------------------------
 
 def build_db_variants(dest, db, opts):
-    images_by_keyword = {}
-    images_by_month = {}
+    key_type_to_keyword_to_image = {}
+
     all_images = []
     for image_id in db:
         image = db[image_id]
         for k in image['keywords']:
-            db_dict_add(k, image, images_by_keyword)
-        db_dict_add(image['month'], image, images_by_month)
+            add_to_indexes('keyword', k, image, key_type_to_keyword_to_image)
+        add_to_indexes('month', image['month'], image, key_type_to_keyword_to_image)
+        add_exif_to_indexes(image, key_type_to_keyword_to_image)
         all_images.append(image)
     sort_images(all_images)
     add_prev_next(all_images)
-    keywords, keywords_by_id = dict_index(images_by_keyword)
-    months, months_by_id = dict_index(images_by_month, reverse=True)
-    write_indexes(dest, "keyword", images_by_keyword, keywords_by_id)
-    write_indexes(dest, "month", images_by_month, months_by_id)
-    index = {'keywords':  keywords,
-             'months':    months,
+    key_type_to_keyword_details = {}
+    for key_type in key_type_to_keyword_to_image:
+        keyword_to_image = key_type_to_keyword_to_image[key_type]
+        keyword_details, keyword_to_details = db_index(keyword_to_image)
+        key_type_to_keyword_details[key_type] = keyword_details
+        write_indexes(dest, key_type, keyword_to_details, keyword_to_image)
+    index = {'keywords':  key_type_to_keyword_details,
              'originals': not opts.ignore_orig}
     write_json(os.path.join(dest, "index.json"), index)
     [write_json(os.path.join(dest, "id", "{0}.json".format(image['id'])), image)
      for image in all_images]
 
-def db_dict_add(key, val, dic):
-    if not key in dic:
-        dic[key] = []
-    dic[key].append(val)
+def add_exif_to_indexes(image, key_type_to_keyword_to_image):
+    def add(our_name, exif_name):
+        exif = image['exif']
+        if exif_name in exif:
+            add_to_indexes(our_name, exif[exif_name], image, key_type_to_keyword_to_image)
+    add('camera', 'Model')
+    add('lens', 'LensModel')
 
-def write_indexes(dest, key_type, images_by_key, keys_by_id):
-    for key in images_by_key:
-        images = images_by_key[key]
+def add_to_indexes(key_type, keyword, image, key_type_to_keyword_to_image):
+    if not key_type in key_type_to_keyword_to_image:
+        key_type_to_keyword_to_image[key_type] = {}
+    d = key_type_to_keyword_to_image[key_type]
+    if not keyword in d:
+        d[keyword] = []
+    d[keyword].append(image)
+
+def write_indexes(dest, key_type, keyword_to_details, keyword_to_image):
+    for keyword in keyword_to_image:
+        images = keyword_to_image[keyword]
         sort_images(images)
-        write_json(os.path.join(dest, key_type, "{0}.json".format(key)),
+        write_json(os.path.join(dest, key_type, "{0}.json".format(keyword)),
                    {'images': images,
-                    'meta':   keys_by_id[key]})
+                    'meta':   keyword_to_details[keyword]})
 
-def dict_index(dic, **kwargs):
-    item_list = []
-    for key in dic.keys():
-        thumbs = [i['file'] for i in dic[key]]
+def db_index(keyword_to_image):
+    keyword_details = []
+    for keyword in keyword_to_image:
+        thumbs = [i['file'] for i in keyword_to_image[keyword]]
         random.shuffle(thumbs)
         thumbs = thumbs[0:3]
-        item_list.append({'id':     key,
-                          'count':  len(dic[key]),
-                          'thumbs': thumbs})
-    item_list.sort(key=lambda item: item['id'], **kwargs)
-    add_prev_next(item_list)
-    item_dict = {}
-    for item in item_list:
-        item_dict[item['id']] = item
-    return (item_list, item_dict)
+        keyword_details.append({'id':       keyword,
+                                'count':    len(keyword_to_image[keyword]),
+                                'thumbs':   thumbs})
+    keyword_details.sort(key=lambda item: item['id'])
+    add_prev_next(keyword_details)
+    keyword_to_detail = {}
+    for keyword_detail in keyword_details:
+        keyword_to_detail[keyword_detail['id']] = keyword_detail
+    return (keyword_details, keyword_to_detail)
 
 def add_prev_next(items):
     for i in range(0, len(items)):

@@ -4,6 +4,7 @@
 <link rel="import" href="facet-header.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
+<link rel="import" href="facet-keyword-list.html">
 
 <dom-module id="facet-keywords">
   <template>
@@ -20,11 +21,14 @@
 
     <facet-header title="Keywords"></facet-header>
 
-    <div>
-      <template is="dom-repeat" items="[[index.keywords]]">
-	<a href="#/by-keyword/[[fmtUrl(item.id)]]" style="font-size: [[logSize(item.count)]]em ;" title="[[item.count]] images">[[item.id]]</a>&nbsp;
-      </template>
-    </div>
+    <h2>Tags</h2>
+    <facet-keyword-list type="keyword" list="[[index.keywords.keyword]]"></facet-keyword-list>
+
+    <h2>Cameras</h2>
+    <facet-keyword-list type="camera" list="[[index.keywords.camera]]"></facet-keyword-list>
+
+    <h2>Lenses</h2>
+    <facet-keyword-list type="lens" list="[[index.keywords.lens]]"></facet-keyword-list>
   </template>
 
   <script>
@@ -36,10 +40,6 @@
       },
 
       behaviors: [window.Formatting],
-
-      logSize: function(count) {
-        return Math.max(Math.log10(count), 0.8);
-      },
     });
   </script>
 </dom-module>

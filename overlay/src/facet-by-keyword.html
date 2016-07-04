@@ -1,20 +1,35 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="facet-data.html">
+<link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
 <link rel="import" href="facet-group-mode.html">
 
 <dom-module id="facet-by-keyword">
   <template>
+    <style include="facet-styles">
+    </style>
+
     <app-route
         route="[[route]]"
-        pattern="/by-keyword/:keywordId"
+        pattern="/by/:keywordType/:keywordId"
         data="{{routeData}}"></app-route>
 
     <facet-data
+        keyword-type="[[routeData.keywordType]]"
         keyword-id="[[routeData.keywordId]]"
         keyword="{{keyword}}"></facet-data>
 
-    <facet-header title="[[keyword.meta.id]]">
+    <facet-header title-type="[[fmtCap(routeData.keywordType)]]" title="[[fmt(keyword.meta.id)]]">
+      <template is="dom-if" if="[[keyword.meta.prev]]">
+	<a class="chip" href="#/by/[[routeData.keywordType]]/[[keyword.meta.prev]]">
+	  &lt; [[fmt(keyword.meta.prev)]]
+	</a>
+      </template>
+      <template is="dom-if" if="[[keyword.meta.next]]">
+	<a class="chip" href="#/by/[[routeData.keywordType]]/[[keyword.meta.next]]">
+	  [[fmt(keyword.meta.next)]] &gt;
+	</a>
+      </template>
       <facet-group-mode group-mode="{{groupMode}}"></facet-group-mode>
     </facet-header>
 
@@ -29,6 +44,10 @@
       },
 
       behaviors: [window.Formatting],
+
+      fmt: function(s) {
+	return this.routeData.keywordType == 'month' ? this.fmtMonth(s) : s;
+      }
     });
   </script>
 </dom-module>

@@ -20,7 +20,7 @@
     <facet-header title="Months"></facet-header>
 
     <table>
-      <template is="dom-repeat" items="[[index.months]]">
+      <template is="dom-repeat" items="[[index.keywords.month]]">
 	<tr>
 	  <td>
 	    <template is="dom-repeat" items="[[item.thumbs]]">
@@ -30,7 +30,7 @@
 	    </template>
 	  </td>
 	  <td>
-	    <a href="#/by-month/[[item.id]]">
+	    <a href="#/by/month/[[item.id]]">
               [[fmtMonth(item.id)]]<br/>
               [[item.count]] images
 	    </a>

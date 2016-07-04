@@ -25,12 +25,12 @@
         image-id="[[routeData.imageId]]"
         image="{{image}}"></facet-data>
 
-    <facet-header title="[[image.id]]">
+    <facet-header title-type="Image" title="[[image.id]]">
       <span>Similar:</span>
       <template is="dom-repeat" items="[[image.keywords]]">
-	<a class="chip" href="#/by-keyword/{{item}}">[[item]]</a>
+	<a class="chip" href="#/by/keyword/{{item}}">[[item]]</a>
       </template>
-      <a class="chip" href="#/by-month/{{image.month}}">[[fmtMonth(image.month)]]</a>
+      <a class="chip" href="#/by/month/{{image.month}}">[[fmtMonth(image.month)]]</a>
     </facet-header>
 
     <iron-image2 src="scaled/1000/[[image.file]]"></iron-image2>
