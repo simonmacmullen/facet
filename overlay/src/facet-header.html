@@ -15,7 +15,12 @@
 
     <app-header role="navigation" id="header" reveals>
       <div class="box">
-	<h1><b>{{title}}</b> - Facet image viewer</h1>
+	<h1>
+	  <template is="dom-if" if="[[titleType]]">
+	    [[titleType]]:
+	  </template>
+	  <b>[[title]]</b>
+	</h1>
 	<nav>
           <a class="chip" href="#/keywords">All keywords</a>
           <a class="chip" href="#/months">All months</a>
@@ -30,7 +35,19 @@
       is: 'facet-header',
 
       properties: {
+	title: String,
+	titleType: String,
       },
+
+      observers: ['newTitle(titleType, title)'],
+
+      newTitle: function(titleType, title) {
+	if (titleType) {
+	  document.title = titleType + ': ' + title;
+	} else {
+	  document.title = title;
+	}
+      }
     });
   </script>
 </dom-module>
