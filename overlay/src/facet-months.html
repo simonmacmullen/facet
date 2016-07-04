@@ -20,7 +20,7 @@
     <facet-header title="Months"></facet-header>
 
     <table>
-      <template is="dom-repeat" items="[[index.keywords.month]]">
+      <template is="dom-repeat" items="[[months]]">
 	<tr>
 	  <td>
 	    <template is="dom-repeat" items="[[item.thumbs]]">
@@ -45,10 +45,18 @@
       is: 'facet-months',
 
       properties: {
-        route: Object,
+	route: Object,
+	months: {
+	  type: Array,
+	  computed: 'computeMonths(index)',
+	}
       },
 
       behaviors: [window.Formatting],
+
+      computeMonths: function(index) {
+	return [].concat(index.keywords.month).reverse();
+      }
     });
   </script>
 </dom-module>
