@@ -250,20 +250,14 @@ def scaled_sizes(options):
 
 def build_db_variants(dest, db, opts):
     key_type_to_keyword_to_image = {}
-    def indexes_add(key_type, keyword, val):
-        if not key_type in key_type_to_keyword_to_image:
-            key_type_to_keyword_to_image[key_type] = {}
-        d = key_type_to_keyword_to_image[key_type]
-        if not keyword in d:
-            d[keyword] = []
-        d[keyword].append(val)
 
     all_images = []
     for image_id in db:
         image = db[image_id]
         for k in image['keywords']:
-            indexes_add('keyword', k, image)
-        indexes_add('month', image['month'], image)
+            add_to_indexes('keyword', k, image, key_type_to_keyword_to_image)
+        add_to_indexes('month', image['month'], image, key_type_to_keyword_to_image)
+        add_exif_to_indexes(image, key_type_to_keyword_to_image)
         all_images.append(image)
     sort_images(all_images)
     add_prev_next(all_images)
@@ -278,6 +272,22 @@ def build_db_variants(dest, db, opts):
     write_json(os.path.join(dest, "index.json"), index)
     [write_json(os.path.join(dest, "id", "{0}.json".format(image['id'])), image)
      for image in all_images]
+
+def add_exif_to_indexes(image, key_type_to_keyword_to_image):
+    def add(our_name, exif_name):
+        exif = image['exif']
+        if exif_name in exif:
+            add_to_indexes(our_name, exif[exif_name], image, key_type_to_keyword_to_image)
+    add('camera', 'Model')
+    add('lens', 'LensModel')
+
+def add_to_indexes(key_type, keyword, image, key_type_to_keyword_to_image):
+    if not key_type in key_type_to_keyword_to_image:
+        key_type_to_keyword_to_image[key_type] = {}
+    d = key_type_to_keyword_to_image[key_type]
+    if not keyword in d:
+        d[keyword] = []
+    d[keyword].append(image)
 
 def write_indexes(dest, key_type, keyword_to_details, keyword_to_image):
     for keyword in keyword_to_image:
