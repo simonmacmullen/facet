@@ -62,8 +62,8 @@
 
       _indexLoaded: function(index) {
 	if (this.page == 'home') {
-	  //this.$.appRoute.route = '/by-month/' + index.months[0].id;
-	  window.location.hash = '/by/month/' + index.keywords.month[0].id;
+          var months = index.keywords.month;
+	  window.location.hash = '/by/month/' + months[months.length - 1].id;
 	}
       },
     });

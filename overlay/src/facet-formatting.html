@@ -40,7 +40,7 @@
     },
 
     fmtUrl: function(s) {
-      return encodeURIComponent(s);
+      return encodeURIComponent(s.replace('/', '-'));
     },
 
     fmtCap: function(s) {

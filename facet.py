@@ -297,7 +297,8 @@ def write_indexes(dest, key_type, keyword_to_details, keyword_to_image):
     for keyword in keyword_to_image:
         images = keyword_to_image[keyword]
         sort_images(images)
-        write_json(os.path.join(dest, key_type, "{0}.json".format(keyword)),
+        write_json(os.path.join(dest, key_type,
+                                "{0}.json".format(id_from_filename(keyword))),
                    {'images': images,
                     'meta':   keyword_to_details[keyword]})
 

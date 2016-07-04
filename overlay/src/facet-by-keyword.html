@@ -21,12 +21,12 @@
 
     <facet-header title-type="[[fmtCap(routeData.keywordType)]]" title="[[fmt(keyword.meta.id)]]">
       <template is="dom-if" if="[[keyword.meta.prev]]">
-	<a class="chip" href="#/by/[[routeData.keywordType]]/[[keyword.meta.prev]]">
+	<a class="chip" href="#/by/[[routeData.keywordType]]/[[fmtUrl(keyword.meta.prev)]]">
 	  &lt; [[fmt(keyword.meta.prev)]]
 	</a>
       </template>
       <template is="dom-if" if="[[keyword.meta.next]]">
-	<a class="chip" href="#/by/[[routeData.keywordType]]/[[keyword.meta.next]]">
+	<a class="chip" href="#/by/[[routeData.keywordType]]/[[fmtUrl(keyword.meta.next)]]">
 	  [[fmt(keyword.meta.next)]] &gt;
 	</a>
       </template>
