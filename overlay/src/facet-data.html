@@ -12,19 +12,12 @@
           notify: true
         },
 
-	monthId: {
+	keywordType: {
 	  type: String,
-	  observer: '_getMonth',
 	},
 
-	month: {
-          type: Object,
-          notify: true
-	},
-
-	keywordId: {
+        keywordId: {
 	  type: String,
-	  observer: '_getKeyword',
 	},
 
 	keyword: {
@@ -42,18 +35,16 @@
           notify: true
 	},
       },
-      
+
+      observers: ['_getKeyword(keywordType, keywordId)'],
+  
       ready: function() {
 	if (this.index) return;
 	this._getItem('/data/index.json', 'index');
       },
       
-      _getMonth: function(monthId) {
-	this._getItem('/data/month/' + monthId + '.json', 'month');
-      },
-
-      _getKeyword: function(keywordId) {
-	this._getItem('/data/keyword/' + keywordId + '.json', 'keyword');
+      _getKeyword: function(keywordType, keywordId) {
+	this._getItem('/data/' + keywordType +  '/' + keywordId + '.json', 'keyword');
       },
 
       _getImage: function(imageId) {

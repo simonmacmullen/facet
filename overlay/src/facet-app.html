@@ -4,10 +4,9 @@
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="facet-data.html">
-<link rel="import" href="facet-by-month.html">
 <link rel="import" href="facet-by-keyword.html">
-<link rel="import" href="facet-months.html">
 <link rel="import" href="facet-keywords.html">
+<link rel="import" href="facet-months.html">
 <link rel="import" href="facet-image-list.html">
 <link rel="import" href="facet-image.html">
 
@@ -26,10 +25,9 @@
     <facet-data index="{{index}}"></facet-data>
 
     <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible">
-      <facet-months name="months" route="[[route]]"></facet-months>
       <facet-keywords name="keywords" route="[[route]]"></facet-keywords>
-      <facet-by-month name="by-month" route="[[route]]"></facet-by-month>
-      <facet-by-keyword name="by-keyword" route="[[route]]"></facet-by-keyword>
+      <facet-months name="months" route="[[route]]"></facet-months>
+      <facet-by-keyword name="by" route="[[route]]"></facet-by-keyword>
       <facet-image name="image" route="[[route]]"></facet-image>
     </iron-pages>
   </template>
@@ -65,7 +63,7 @@
       _indexLoaded: function(index) {
 	if (this.page == 'home') {
 	  //this.$.appRoute.route = '/by-month/' + index.months[0].id;
-	  window.location.hash = '/by-month/' + index.months[0].id;
+	  window.location.hash = '/by/month/' + index.keywords.month[0].id;
 	}
       },
     });
