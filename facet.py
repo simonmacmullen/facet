@@ -137,7 +137,11 @@ def update_images_in_db(src, dest, images, db_path, db, opts):
 
 def parse_scale_image_remote(args):
     def invoke(cmd):
-        return subprocess.check_output(cmd).decode('utf-8').splitlines()
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        if proc.returncode != 0 and proc.returncode != 253: # exiv2 issue 917
+            raise Exception("Error code " + proc.returncode + " running " + cmd)
+        return out.decode('utf-8').splitlines()
     def remove(d, k, default = None):
         if k in d:
             v = d[k]
