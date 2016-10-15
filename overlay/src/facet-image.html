@@ -11,17 +11,27 @@
       .metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
       .metadata th { color: #ddd; font-weight: normal; text-align: right; padding-right: 5px; }
       .metadata th, .metadata td { vertical-align: top; }
-      iron-image2 { --iron-image-max-width: 96vw; --iron-image-max-height: 96vh; margin-bottom: 10px; border: 2px solid black; }
+      iron-image2 { --iron-image-max-width: 96vw; --iron-image-max-height: 96vh; border: 2px solid black; }
       .f-stop { font-style: italic; font-family: serif; }
       .divider { color: #666; }
+      .wrapper { position: relative; width: auto; display: inline-block; }
+      .wrapper .prev, .wrapper .next { position: absolute; height: 99%; line-height: 99%; width: 33%; display: flex; z-index: 1; align-items: center; justify-content: center; }
+      .wrapper .prev:hover, .wrapper .next:hover { background: #ddd; opacity: 0.3; }
+      .wrapper .prev span, .wrapper .next span { color: black; font-size: 500%; visibility: hidden; }
+      .wrapper .prev:hover span, .wrapper .next:hover span { visibility: inherit; }
+      .wrapper .prev { left: 0; }
+      .wrapper .next { right: 0; }
     </style>
 
     <app-route
         route="[[route]]"
-        pattern="/image/:imageId"
+        pattern="/image/:keywordType/:keywordId/:imageId"
         data="{{routeData}}"></app-route>
 
     <facet-data
+        keyword-type="[[routeData.keywordType]]"
+        keyword-id="[[routeData.keywordId]]"
+        keyword="{{keyword}}"
         image-id="[[routeData.imageId]]"
         image="{{image}}"></facet-data>
 
@@ -33,7 +43,15 @@
       <a class="chip" href="#/by/month/{{image.month}}">[[fmtMonth(image.month)]]</a>
     </facet-header>
 
-    <iron-image2 src="scaled/1000/[[image.file]]"></iron-image2>
+    <div class="wrapper">
+      <template is="dom-if" if="[[prevId]]">
+	<a class="prev" href="#/image/[[routeData.keywordType]]/[[routeData.keywordId]]/[[prevId]]"><span>&lt;</span></a>
+      </template>
+      <template is="dom-if" if="[[nextId]]">
+	<a class="next" href="#/image/[[routeData.keywordType]]/[[routeData.keywordId]]/[[nextId]]"><span>&gt;</span></a>
+      </template>
+      <iron-image2 src="scaled/1000/[[image.file]]"></iron-image2>
+    </div>
     
     <table class="metadata">
       <tr>
@@ -96,6 +114,10 @@
         route: Object,
       },
 
+      observers: [
+        'imageChanged(keyword, image)'
+      ],
+
       behaviors: [window.Formatting],
 
       exposure: function(n) {
@@ -104,6 +126,16 @@
 
       notEmpty: function(d) {
 	return typeof(d) === 'object' && Object.keys(d).length > 0;
+      },
+
+      imageChanged: function(keyword, img) {
+	var imgs = keyword.images;
+	for (var i = 0; i < imgs.length; i++) {
+	  if (imgs[i].id == img.id) {
+	    this.nextId = i + 1 < imgs.length ? imgs[i + 1].id : undefined;
+	    this.prevId = i - 1 >= 0 ? imgs[i - 1].id : undefined;
+	  }
+	}
       }
     });
   </script>

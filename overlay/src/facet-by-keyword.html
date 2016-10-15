@@ -33,7 +33,7 @@
       <facet-group-mode group-mode="{{groupMode}}"></facet-group-mode>
     </facet-header>
 
-    <facet-image-list group-mode="[[groupMode]]" images="[[keyword.images]]"/>
+    <facet-image-list group-mode="[[groupMode]]" images="[[keyword.images]]" link-prefix="[[routeData.keywordType]]/[[routeData.keywordId]]" />
   </template>
   <script>
     Polymer({

@@ -21,7 +21,7 @@
       </h2>
       <template is="dom-repeat" items="[[item.images]]">
 	<div class="photo">
-	  <a href="#/image/[[item.id]]">
+	  <a href="#/image/[[linkPrefix]]/[[item.id]]">
 	    <iron-image2 preload src="scaled/120/[[item.file]]"></iron-image2>
 	  </a>
 	</div>
@@ -47,6 +47,8 @@
 	  type: Array,
 	  computed: 'computeGroupedImages(groupMode, images)',
 	},
+
+        linkPrefix: String,
       },
 
       behaviors: [window.Formatting],
