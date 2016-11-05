@@ -11,6 +11,7 @@ import http.server
 import multiprocessing
 import random
 import re
+import time
 
 SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
@@ -276,6 +277,8 @@ def build_db_variants(dest, db, opts):
     write_json(os.path.join(dest, "index.json"), index)
     [write_json(os.path.join(dest, "id", "{0}.json".format(image['id'])), image)
      for image in all_images]
+    write_json(os.path.join(dest, "timestamp.json"),
+               {'timestamp': int(time.time())})
 
 def add_exif_to_indexes(image, key_type_to_keyword_to_image):
     def add(our_name, exif_name):

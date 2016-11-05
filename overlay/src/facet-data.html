@@ -34,12 +34,18 @@
           type: Object,
           notify: true
 	},
+
+	timestamp: {
+	  type: Number,
+	},
       },
 
       observers: ['_getKeyword(keywordType, keywordId)'],
   
       ready: function() {
 	if (this.index) return;
+	this.timestamp = Math.floor(Math.random() * 100000000);
+	this._getRealTimestamp();
 	this._getItem('/data/index.json', 'index');
       },
       
@@ -51,11 +57,28 @@
         this._getItem('/data/id/' + imageId + '.json', 'image');
       },
 
+      _getRealTimestamp: function() {
+        this._getResource({
+          url: '/data/timestamp.json',
+          onLoad: function(e) {
+	    this.set('timestamp', JSON.parse(e.target.responseText).timestamp);
+          },
+          onError: function(e) {
+            throw(e);
+          }
+        }, 3);
+      },
+
       _getItem: function(path, dest) {
         this._getResource({
-          url: path,
+          url: path + '?' + this.timestamp,
           onLoad: function(e) {
-	    this.set(dest, JSON.parse(e.target.responseText));
+	    var resp = e.target;
+	    if (resp.status >= 400) {
+	      console.log(resp.status + ': ' + path);
+	    } else {
+	      this.set(dest, JSON.parse(resp.responseText));
+	    }
           },
           onError: function(e) {
             throw(e);
