@@ -40,6 +40,7 @@
     },
 
     fmtUrl: function(s) {
+      if (s === undefined) return '';
       return encodeURIComponent(s.replace('/', '-'));
     },
 
