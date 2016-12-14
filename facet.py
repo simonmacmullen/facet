@@ -21,6 +21,14 @@ SCALED_SIZES = [("120", "min"), ("1000", "max")]
 
 def main():
     parser = OptionParser(usage = "usage: %prog [options] src-images dest")
+    parser.add_option("-e", "--exclude-tags",
+                      dest="excludes", default="",
+                      help="comma-separated list of tags which prevent a photo "
+                      + "from being included")
+    parser.add_option("-r", "--require-tags",
+                      dest="requires", default="",
+                      help="comma-separated list of tags which are required "
+                      + "for a photo to be included")
     parser.add_option("-d", "--develop-mode",
                       action="store_true", dest="dev_mode", default=False,
                       help="symlink overlay files instead of copying")
@@ -43,14 +51,15 @@ def main():
 
 def build(src, dest, opts):
     print("\n Facet generator\n ---------------\n")
-    dest_json = os.path.join(dest, "data")
+    dest_site = os.path.join(dest, "site")
+    dest_json = os.path.join(dest_site, "data")
     copytree_over(os.path.join(os.path.dirname(sys.argv[0]), "overlay"),
-                  dest, opts.dev_mode)
+                  dest_site, opts.dev_mode)
     files = find_images(src)
-    db_path = os.path.join(dest_json, "db.json")
-    db = build_db(src, dest, files, db_path, opts)
+    db_path = os.path.join(dest, "db.json")
+    db = build_db(src, dest_site, files, db_path, opts)
     build_db_variants(dest_json, db, opts)
-    maybe_launch_http(dest, opts.port)
+    maybe_launch_http(dest_site, opts.port)
 
 #-----------------------------------------------------------------------------
 # Find images
@@ -78,11 +87,12 @@ def plausible_image(f):
 def build_db(src, dest, files, db_path, opts):
     db = load_db(db_path)
     todo = todo_images(files, dest, db, opts)
-    print(" Images to update: {0} | Total: {1}".format(len(todo), len(files)))
+    print(" To update: {0} | Total: {1}".format(len(todo), len(files)))
     update_images_in_db(src, dest, todo, db_path, db, opts)
-    clean_scaled(files, dest, opts)
     db = clean_db(files, db)
     write_json(db_path, db)
+    db = remove_exclusions_from_db(db, opts)
+    clean_scaled(db, dest, opts)
     print(" Complete\n")
     return db
 
@@ -96,10 +106,16 @@ def load_db(path):
 def todo_images(images, dest, db, opts):
     return [(f, t) for (f, t) in images if todo_image(f, t, dest, db, opts)]
 
-def todo_image(f, t, dest, db, opts):
-    return id_from_filename(f) not in db \
-        or db[id_from_filename(f)]['timestamp'] != t \
-        or any([todo_scaled_image(f, t, dest, sz) for sz in scaled_sizes(opts)])
+def todo_image(file, timestamp, dest, db, opts):
+    image = db.get(id_from_filename(file))
+    return image is None \
+        or image['timestamp'] != timestamp \
+        or (todo_any_scaled_image(file, timestamp, dest, opts)
+            and keep_image(image, opts))
+
+def todo_any_scaled_image(filename, timestamp, dest, opts):
+    return any([todo_scaled_image(filename, timestamp, dest, sz)
+                for sz in scaled_sizes(opts)])
 
 def todo_scaled_image(filename, timestamp, dest, size):
     scaled = scaled_filename(dest, size, filename)
@@ -113,11 +129,27 @@ def clean_db(files, db):
         if not k in id_set:
             del db[k]
             i += 1
-    print(" Removed {0} old images".format(i))
+    print(" Removed: {0}".format(i))
     return db
 
-def clean_scaled(files, dest, opts):
-    filename_set = set([f for (f, _t) in files])
+def remove_exclusions_from_db(db, opts):
+    i = 0
+    for k in list(db.keys()):
+        if not keep_image(db[k], opts):
+            i += 1
+            del db[k]
+    print(" Excluded: {0}".format(i))
+    return db
+
+def keep_image(image, opts):
+    keywords = set(image['keywords'])
+    requires = set(opts.requires.split(','))
+    excludes = set(opts.excludes.split(','))
+    return (len(requires) == 0 or not keywords.isdisjoint(requires)) \
+        and keywords.isdisjoint(excludes)
+
+def clean_scaled(db, dest, opts):
+    filename_set = set([image['file'] for image in db.values()])
     for size in scaled_sizes(opts):
         top = scaled_parent(dest, size)
         for root, dirs, files in os.walk(top):
@@ -254,6 +286,8 @@ def scaled_sizes(options):
 #-----------------------------------------------------------------------------
 
 def build_db_variants(dest, db, opts):
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
     key_type_to_keyword_to_image = {}
 
     all_images = []
