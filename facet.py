@@ -145,7 +145,7 @@ def keep_image(image, opts):
     keywords = set(image['keywords'])
     requires = set(opts.requires.split(','))
     excludes = set(opts.excludes.split(','))
-    return (len(requires) == 0 or not keywords.isdisjoint(requires)) \
+    return (opts.requires == '' or not keywords.isdisjoint(requires)) \
         and keywords.isdisjoint(excludes)
 
 def clean_scaled(db, dest, opts):
