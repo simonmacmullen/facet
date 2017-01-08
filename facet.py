@@ -188,7 +188,7 @@ def parse_scale_image_remote(args):
     width = int(out[0])
     height = int(out[1])
 
-    exif = parse_exif(invoke(["exiv2", "-PEIkv", path]))
+    exif = parse_exif(invoke(["exiv2", "-PEIXkv", path]))
     keywords = remove(exif, 'Keywords', [])
     try:
         taken = datetime.strptime(
@@ -232,6 +232,9 @@ def parse_exif(exif_list):
         if match:
             k = match.group(1)
             v = match.group(2)
+            if k == 'Rating':
+                k = 'Keywords'
+                v = 'Rating: ' + '\u2605' * int(v)
             if k in GOOD_EXIF:
                 if k in RATIONAL_EXIF:
                     (num, den) = v.split('/')
