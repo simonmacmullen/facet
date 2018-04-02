@@ -1,6 +1,5 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
-<link rel="import" href="iron-image2.html">
 <link rel="import" href="facet-data.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
@@ -11,7 +10,7 @@
       .metadata { margin: 10px 0; border: 2px solid #666; font-size: 0.9em; }
       .metadata th { color: #ddd; font-weight: normal; text-align: right; padding-right: 5px; }
       .metadata th, .metadata td { vertical-align: top; }
-      iron-image2 { --iron-image-max-width: 96vw; --iron-image-max-height: 96vh; border: 2px solid black; }
+      img { max-width: 96vw; max-height: 96vh; border: 2px solid black; }
       .f-stop { font-style: italic; font-family: serif; }
       .divider { color: #666; }
       .wrapper { position: relative; width: auto; display: inline-block; }
@@ -33,7 +32,8 @@
         keyword-id="[[routeData.keywordId]]"
         keyword="{{keyword}}"
         image-id="[[routeData.imageId]]"
-        image="{{image}}"></facet-data>
+        image="{{image}}"
+        loading="{{loading}}"></facet-data>
 
     <facet-header title-type="Image" title="[[image.id]]">
       <span>Similar:</span>
@@ -43,6 +43,10 @@
       <a class="chip" href="#/by/month/{{image.month}}">[[fmtMonth(image.month)]]</a>
     </facet-header>
 
+    <template is="dom-if" if="[[loading]]">
+      ...
+    </template>
+    <template is="dom-if" if="[[!loading]]">
     <div class="wrapper">
       <template is="dom-if" if="[[prevId]]">
 	<a class="prev" href="#/image/[[routeData.keywordType]]/[[routeData.keywordId]]/[[prevId]]"><span>&lt;</span></a>
@@ -50,22 +54,23 @@
       <template is="dom-if" if="[[nextId]]">
 	<a class="next" href="#/image/[[routeData.keywordType]]/[[routeData.keywordId]]/[[nextId]]"><span>&gt;</span></a>
       </template>
-      <iron-image2 src="scaled/1000/[[image.file]]"></iron-image2>
+      <img src="scaled/1000/[[image.file]]">
     </div>
-    
+
     <table class="metadata">
       <tr>
 	<th>Keywords:</th>
 	<td>
 	  <template is="dom-repeat" items="[[image.keywords]]">
-            <a class="chip" href="#/by-keyword/[[item]]">[[item]]</a>&nbsp;
+            <a class="chip" href="#/by/keyword/[[item]]">[[item]]</a>&nbsp;
 	  </template>
 	</td>
       </tr>
       <tr>
-	<th>Full size:</th>
+	<th>Links:</th>
 	<td>
-	  <a class="chip" target="_blank" href="original/[[image.file]]">Download [[image.width]]x[[image.height]]</a>
+          <a class="chip" target="_blank" href="original/[[image.file]]">Download [[image.width]]x[[image.height]]</a>
+          <a class="chip" target="_blank" href="[[link(image)]]">Shareable Link</a>
 	</td>
       </tr>
       <tr>
@@ -103,6 +108,7 @@
 	</tr>
       </template>
     </table>
+    </template>
 
   </template>
 
@@ -126,6 +132,13 @@
 
       notEmpty: function(d) {
 	return typeof(d) === 'object' && Object.keys(d).length > 0;
+      },
+
+      link: function(img) {
+        var image = encodeURIComponent(window.location.origin + '/scaled/1000/' + img.file);
+        var redirect = encodeURIComponent(window.location.href);
+        var keywords = encodeURIComponent(img.keywords.join(' / '));
+        return 'link.php?image=' + image + '&redirect=' + redirect + '&id=' + img.id + '&keywords=' + keywords;
       },
 
       imageChanged: function(keyword, img) {

@@ -1,17 +1,49 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="iron-image2.html">
 <link rel="import" href="facet-styles.html">
 <link rel="import" href="facet-formatting.html">
+<link rel="import" href="iron-image2.html">
 
 <dom-module id="facet-image-list">
   <template>
     <style include="facet-styles">
-      .photo { margin: 0 8px 8px 0; display: inline-block; }
-      a { display: block; width: 120px; height: 120px; overflow: hidden; border: 2px solid #333; }
-      a:hover { border: 2px solid black; }
-      iron-image2 { background-color: #222; width: 120px; height: 120px; }
+      .photos {
+        margin: 0 -8px -8px 0;
+      }
+      .photo {
+        margin: 0 8px 8px 0;
+        display: inline-block;
+      }
+      @media screen and (max-width: 420px) {
+        a, iron-image2 {
+          width: calc((100vw / 3) - 18px);
+          height: calc((100vw / 3) - 18px);
+        }
+      }
+      @media screen and (min-width: 421px) {
+        a, iron-image2 {
+          width: 120px;
+          height: 120px;
+        }
+      }
+      a {
+        display: block;
+        overflow: hidden;
+        border: 2px solid #333;
+      }
+      a:hover {
+        border: 2px solid black;
+      }
+      iron-image2 {
+        background-color: #222;
+      }
     </style>
 
+    <facet-data loading="{{loading}}"></facet-data>
+
+    <template is="dom-if" if="[[loading]]">
+      ...
+    </template>
+    <template is="dom-if" if="[[!loading]]">
     <template is="dom-repeat" items="[[groupedImages]]">
       <h2>
 	[[fmtDateMedium(item.firstDate)]]
@@ -19,14 +51,17 @@
 	  - [[fmtDateMedium(item.lastDate)]]
 	</template>
       </h2>
-      <template is="dom-repeat" items="[[item.images]]">
-	<div class="photo">
-	  <a href="#/image/[[linkPrefix]]/[[item.id]]">
-	    <iron-image2 preload src="scaled/120/[[item.file]]"></iron-image2>
-	  </a>
-	</div>
-      </template>
+      <div class="photos">
+	<template is="dom-repeat" items="[[item.images]]">
+	  <div class="photo">
+	    <a href="#/image/[[linkPrefix]]/[[item.id]]">
+	      <iron-image2 preload src="scaled/120/[[item.file]]">
+	    </a>
+	  </div>
+	</template>
+      </div>
     </template>
+  </template>
   </template>
 
   <script>
@@ -36,7 +71,7 @@
       properties: {
         groupMode: {
 	  type: String,
-	  value: 'day',
+	  value: 'month',
 	},
 	
 	images: {

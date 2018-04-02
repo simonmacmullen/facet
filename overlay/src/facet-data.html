@@ -38,6 +38,17 @@
 	timestamp: {
 	  type: Number,
 	},
+
+        outstanding: {
+          type: Number,
+          value: 0,
+        },
+
+        loading: {
+          type: Boolean,
+          computed: '_computeLoading(outstanding)',
+          notify: true,
+        },
       },
 
       observers: ['_getKeyword(keywordType, keywordId)'],
@@ -61,7 +72,7 @@
         this._getResource({
           url: '/data/timestamp.json',
           onLoad: function(e) {
-	    this.set('timestamp', JSON.parse(e.target.responseText).timestamp);
+            this.set('timestamp', JSON.parse(e.target.responseText).timestamp);
           },
           onError: function(e) {
             throw(e);
@@ -69,11 +80,15 @@
         }, 3);
       },
 
+      _computeLoading: function(outstanding) {
+        return outstanding > 1;
+      },
+
       _getItem: function(path, dest) {
         this._getResource({
           url: path + '?' + this.timestamp,
           onLoad: function(e) {
-	    var resp = e.target;
+          var resp = e.target;
 	    if (resp.status >= 400) {
 	      console.log(resp.status + ': ' + path);
 	    } else {
@@ -88,8 +103,12 @@
 
       _getResource: function(rq, attempts) {
         var xhr = new XMLHttpRequest();
-        xhr.addEventListener('load', rq.onLoad.bind(this));
+        xhr.addEventListener('load', function(e) {
+          this.outstanding--;
+          rq.onLoad.call(this, e)
+	}.bind(this));
         xhr.addEventListener('error', function(e) {
+	  this.outstanding--;
           // Flaky connections might fail fetching resources
           if (attempts > 1) {
             this.debounce('_getResource', this._getResource.bind(this, rq, attempts - 1), 200);
@@ -100,6 +119,7 @@
 
         xhr.open('GET', rq.url);
         xhr.send();
+	this.outstanding++;
       },
     });
   })();
